@@ -3,7 +3,7 @@ from sqlalchemy import select, Boolean, bindparam
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.connection import sessionmanager, get_session
-from database.models import Meme, User
+from database.models import Meme, User, Group
 from loader import logger
 
 
@@ -39,3 +39,15 @@ async def get_users():
     async for session in get_session():
         result = await session.execute(select(User))
         return result.scalars().all()
+
+
+
+async def create_group(user_id: str, group_name: str) -> bool:
+    try:
+        async with sessionmanager.session() as session:
+            session.add(Group(name=group_name, admin_id=user_id))
+            await session.commit()
+            return True
+    except sqlalchemy.exc.IntegrityError:
+        logger.info("Value already exists!")
+        return False

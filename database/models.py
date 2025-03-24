@@ -18,6 +18,8 @@ class Meme(Base):
 
     is_private = Column(Boolean, default=False)
 
+    group_id = Column(Integer, ForeignKey('group.id'), default=None)
+
     user = relationship('User', back_populates='memes')
 
 class User(Base):
@@ -29,3 +31,20 @@ class User(Base):
 
 
     memes = relationship('Meme', back_populates='user')
+
+
+
+class Group(Base):
+    __tablename__ = 'group'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String)
+    admin_id = Column(String, ForeignKey('user.user_id'), unique=True)
+    invite_link_id = Column(String, unique=True)
+
+class UserGroup(Base):
+    __tablename__ = 'user_group'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    user_id = Column(String, ForeignKey('user.user_id'))
+    group_id = Column(Integer, ForeignKey('group.id'))
+

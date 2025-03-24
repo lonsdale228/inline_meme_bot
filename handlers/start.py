@@ -17,7 +17,3 @@ async def start(message: Message):
         if user.user_id == str(user_id):
             await message.answer("You are logged in!")
             return
-
-
-
-

@@ -10,6 +10,35 @@ from loader import logger
 
 router = Router()
 
+
+
+@router.inline_query(F.query=="")
+async def show_possible_commands(inline_query: InlineQuery):
+    results = []
+
+    available_commands = {
+        "meme": "Show video meme",
+        "ameme": "Show audio meme",
+        "gif": "Show gif",
+        "st": "Show stickers",
+    }
+
+
+    for i, (command, desc) in enumerate(available_commands.items()):
+        results.append(
+            InlineQueryResultArticle(
+                id = str(i),
+                title = command,
+                description = desc,
+                input_message_content = InputTextMessageContent(
+                    message_text="it just a hint, dont click on it",
+                ),
+            )
+        )
+    await inline_query.answer(results, cache_time=0, is_personal=True)
+
+
+
 @router.inline_query(F.query.startswith("meme"))
 async def show_user_videos(inline_query: InlineQuery):
     results = []
@@ -81,3 +110,7 @@ async def show_user_gifs(inline_query: InlineQuery):
             id=str(meme.id)
        ))
     await inline_query.answer(results, cache_time=0, is_personal=True)
+
+
+
+
