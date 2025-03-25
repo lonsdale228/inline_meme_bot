@@ -74,6 +74,7 @@ class NameMeme(StatesGroup):
 #
 #     await state.set_state(AddToGroup.add_meme_to_group)
 
+@router.message(F.photo, StateFilter(None))
 @router.message(F.audio, StateFilter(None))
 @router.message(F.video, StateFilter(None))
 @router.message(F.sticker, StateFilter(None))
@@ -89,6 +90,10 @@ async def meme_handler(message: Message, state: FSMContext):
     if message.sticker:
         await state.update_data(meme_file_id=message.sticker.file_id)
         await send_msg("sticker")
+        return
+    if message.photo:
+        await state.update_data(meme_file_id=message.photo[0].file_id)
+        await send_msg("photo")
         return
     elif message.video:
         await state.update_data(meme_file_id=message.video.file_id)

@@ -1,7 +1,7 @@
 
 from aiogram import F, Router
 from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent, InlineQueryResultVideo, \
-    InlineQueryResultCachedVideo, InlineQueryResultCachedAudio, InlineQueryResultCachedDocument, InlineQueryResultCachedSticker, InlineQueryResultCachedGif
+    InlineQueryResultCachedVideo, InlineQueryResultCachedAudio, InlineQueryResultCachedDocument, InlineQueryResultCachedSticker, InlineQueryResultCachedGif,InlineQueryResultCachedPhoto
 
 from database.connection import get_session
 from database.models import Meme
@@ -112,6 +112,22 @@ async def show_user_gifs(inline_query: InlineQuery):
        ))
     await inline_query.answer(results, cache_time=0, is_personal=True)
 
+@router.inline_query(F.query.startswith("photo"))
+async def show_user_gifs(inline_query: InlineQuery):
+    results = []
+
+    search_text = inline_query.query.replace("photo", "").strip()
+
+    meme_list = await get_memes(search_text, "photo", str(inline_query.from_user.id))
+    logger.info(meme_list)
+    for meme in meme_list:
+        results.append(InlineQueryResultCachedPhoto(
+            title=meme.name,
+            photo_file_id=meme.file_id,
+            id=str(meme.id)
+       ))
+    await inline_query.answer(results, cache_time=0, is_personal=True)
+
 
 
 
@@ -125,12 +141,36 @@ async def show_all_memes(inline_query: InlineQuery):
     meme_list = await get_memes(search_text, "*", str(inline_query.from_user.id))
 
     for meme in meme_list:
-        results.append(
-            InlineQueryResultCachedDocument(
-                title=meme.name,
-                document_file_id=meme.file_id,
-                id=str(meme.id)
-            )
-        )
+        match meme.mime_type:
+             case "video":
+                 results.append(InlineQueryResultCachedVideo(
+                     title=meme.name,
+                     video_file_id=meme.file_id,
+                     id=str(meme.id)
+                 ))
+             case "audio":
+                 results.append(InlineQueryResultCachedDocument(
+                     title=meme.name,
+                     document_file_id=meme.file_id,
+                     id=str(meme.id)
+                 ))
+             case "sticker":
+                 results.append(InlineQueryResultCachedSticker(
+                     sticker_file_id=meme.file_id,
+                     title=meme.name,
+                     id=str(meme.id)
+                 ))
+             case "gif":
+                 results.append(InlineQueryResultCachedGif(
+                     gif_file_id=meme.file_id,
+                     title=meme.name,
+                     id=str(meme.id)
+                 ))
+             case "photo":
+                 results.append(InlineQueryResultCachedPhoto(
+                     photo_file_id=meme.file_id,
+                     title=meme.name,
+                     id=str(meme.id)
+                 ))
 
     await inline_query.answer(results, cache_time=0, is_personal=True)
