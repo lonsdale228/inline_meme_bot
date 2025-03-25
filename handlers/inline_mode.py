@@ -115,3 +115,22 @@ async def show_user_gifs(inline_query: InlineQuery):
 
 
 
+@router.inline_query()
+async def show_all_memes(inline_query: InlineQuery):
+    results = []
+
+
+    search_text = inline_query.query.strip()
+
+    meme_list = await get_memes(search_text, "*", str(inline_query.from_user.id))
+
+    for meme in meme_list:
+        results.append(
+            InlineQueryResultCachedDocument(
+                title=meme.name,
+                document_file_id=meme.file_id,
+                id=str(meme.id)
+            )
+        )
+
+    await inline_query.answer(results, cache_time=0, is_personal=True)

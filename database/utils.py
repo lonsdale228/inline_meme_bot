@@ -64,13 +64,13 @@ async def get_memes(search_text: str, media_type: str, user_id: str):
                     # Condition 1: Meme is in a group the user belongs to
                     (
                             (UserGroup.user_id == user_id) &
-                            (Meme.mime_type == media_type) &
+                            ((Meme.mime_type==media_type) if media_type!="*" else True) &
                             (Meme.name.ilike(f"%{search_text}%"))
                     ),
                     # Condition 2: Meme was uploaded by the user
                     (
                             (Meme.user_tg_id == user_id) &
-                            (Meme.mime_type == media_type) &
+                            ((Meme.mime_type==media_type) if media_type!="*" else True) &
                             (Meme.name.ilike(f"%{search_text}%"))
                     )
                 )
