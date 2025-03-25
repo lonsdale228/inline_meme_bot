@@ -16,7 +16,8 @@ async def add_meme(title: str, description: str, file_id: str, mime_type: str, u
                 await add_user(user_id,False)
             except Exception as e:
                 ...
-            meme = Meme(name=title, file_id=file_id, mime_type=mime_type, user_tg_id=user_id, is_public=is_private)
+
+            meme = Meme(name=title, file_id=file_id, mime_type=mime_type, user_tg_id=user_id, is_public=(not is_private))
             session.add(meme)
             await session.flush()
             meme_id: int = meme.id
@@ -44,7 +45,7 @@ async def get_all_user_memes(user_id: str):
             .join(Group, Group.id == GroupMeme.group_id)
             .join(UserGroup, UserGroup.group_id == Group.id)
             .where(UserGroup.user_id == user_id)
-
+            .where(Meme.user_tg_id == user_id)
         )
         result = await session.execute(query)
         return result.scalars().all()
