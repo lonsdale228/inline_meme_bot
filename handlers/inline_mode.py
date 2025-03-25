@@ -45,13 +45,14 @@ async def show_user_videos(inline_query: InlineQuery):
 
     search_text = inline_query.query.replace("meme", "").strip()
 
-    meme_list = await get_memes(search_text, "video")
+    meme_list = await get_memes(search_text, "video", str(inline_query.from_user.id))
     logger.info(meme_list)
+
+    meme: Meme
     for meme in meme_list:
         results.append(InlineQueryResultCachedVideo(
-            title=meme.title,
+            title=meme.name,
             video_file_id=meme.file_id,
-            description=meme.description,
             id=str(meme.id)
        ))
     await inline_query.answer(results, cache_time=0, is_personal=True)
@@ -64,14 +65,14 @@ async def show_user_audios(inline_query: InlineQuery):
 
     search_text = inline_query.query.replace("ameme", "").strip()
 
-    meme_list = await get_memes(search_text, "audio")
+    meme_list = await get_memes(search_text, "audio", str(inline_query.from_user.id))
     logger.info(meme_list)
     for meme in meme_list:
         results.append(InlineQueryResultCachedDocument(
-            caption=meme.title,
-            title=meme.title,
+            caption=meme.name,
+            title=meme.name,
             document_file_id=meme.file_id,
-            description=meme.title,
+            description=meme.name,
             id=str(meme.id)
        ))
     await inline_query.answer(results, cache_time=0, is_personal=True)
@@ -84,12 +85,12 @@ async def show_user_stickers(inline_query: InlineQuery):
 
     search_text = inline_query.query.replace("st", "").strip()
 
-    meme_list = await get_memes(search_text, "sticker")
+    meme_list = await get_memes(search_text, "sticker", str(inline_query.from_user.id))
     logger.info(meme_list)
     for meme in meme_list:
         results.append(InlineQueryResultCachedSticker(
-            title=meme.title,
             sticker_file_id=meme.file_id,
+            title=meme.name,
             id=str(meme.id)
        ))
     await inline_query.answer(results, cache_time=0, is_personal=True)
@@ -101,11 +102,11 @@ async def show_user_gifs(inline_query: InlineQuery):
 
     search_text = inline_query.query.replace("gif", "").strip()
 
-    meme_list = await get_memes(search_text, "gif")
+    meme_list = await get_memes(search_text, "gif", str(inline_query.from_user.id))
     logger.info(meme_list)
     for meme in meme_list:
         results.append(InlineQueryResultCachedGif(
-            title=meme.title,
+            title=meme.name,
             gif_file_id=meme.file_id,
             id=str(meme.id)
        ))
