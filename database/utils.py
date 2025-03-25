@@ -60,6 +60,7 @@ async def get_memes(search_text: str, media_type: str, user_id: str):
             .join(UserGroup, UserGroup.group_id == Group.id)
             .where(UserGroup.user_id == user_id)
             .where(Meme.mime_type == media_type)
+            .where(Meme.user_tg_id == user_id)
             .where(Meme.name.ilike(f"%{search_text}%"))
 
         )
