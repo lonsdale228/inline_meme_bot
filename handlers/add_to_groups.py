@@ -18,7 +18,7 @@ router = Router()
 class AddToGroup(StatesGroup):
     add_meme_to_group = State()
 
-@router.message(StateFilter(AddToGroup.add_meme_to_group))
+@router.message(StateFilter(None))
 async def add_meme_to_group(message: Message, state: FSMContext, meme_id: int):
     result = await get_user_groups(str(message.from_user.id))
 
@@ -46,8 +46,9 @@ async def add_meme_to_group(message: Message, state: FSMContext, meme_id: int):
 
     await state.update_data(meme_id=meme_id)
     await state.update_data(keyboard=keyboard)
-    await state.set_state(AddToGroup.add_meme_to_group)
-    await message.answer(f"Choose groups to add meme to:", reply_markup=InlineKeyboardMarkup(inline_keyboard=keyboard))
+    # await state.set_state(AddToGroup.add_meme_to_group)
+    await message.answer(f"Choose groups to add meme to: \n"
+                         f"Or ignore, to keep it private", reply_markup=InlineKeyboardMarkup(inline_keyboard=keyboard))
 
 
 @router.callback_query(F.data.contains('change'), StateFilter(AddToGroup.add_meme_to_group))

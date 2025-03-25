@@ -115,7 +115,7 @@ async def add_uni_meme(message: Message, state: FSMContext):
     data = await state.get_data()
 
     meme_id = await add_meme(title=meme_name, description="", mime_type=data["mime_type"], file_id=data['meme_file_id'],
-                             is_private=False,
+                             is_private=True,
                              user_id=str(message.from_user.id))
 
     if meme_id != -1:
@@ -123,6 +123,7 @@ async def add_uni_meme(message: Message, state: FSMContext):
 
         if len(await get_user_groups(str(message.from_user.id)))!=0:
             await add_meme_to_group(message=message, state=state, meme_id=meme_id)
+            await state.clear()
         else:
             await message.answer("Added!")
             await state.clear()
