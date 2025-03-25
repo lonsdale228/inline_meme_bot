@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message
 
-from database.utils import add_meme
+from database.utils import add_meme, get_user_groups
 from handlers.add_to_groups import AddToGroup, add_meme_to_group
 
 router = Router()
@@ -121,7 +121,10 @@ async def add_uni_meme(message: Message, state: FSMContext):
     if meme_id != -1:
         await state.set_state(AddToGroup.add_meme_to_group)
 
-        await add_meme_to_group(message=message, state=state, meme_id=meme_id)
+        if len(await get_user_groups(str(message.from_user.id)))!=0:
+            await add_meme_to_group(message=message, state=state, meme_id=meme_id)
+        else:
+            await message.answer("Added!")
     else:
         await message.answer("Already exists!")
         await state.clear()
