@@ -21,6 +21,9 @@ gif - GIF
 video - Videos
 st - Stickers
 audio - Audios
+
+Also you can create groups, to share meme with your friends, 
+and only to your friends.
 """
 
 @router.message(Command("start"), StateFilter(None))
