@@ -12,6 +12,10 @@ from loader import logger
 async def add_meme(title: str, description: str, file_id: str, mime_type: str, user_id: str, is_private: bool = False) -> int:
     try:
         async with sessionmanager.session() as session:
+            try:
+                await add_user(user_id,False)
+            except Exception as e:
+                ...
             meme = Meme(name=title, file_id=file_id, mime_type=mime_type, user_tg_id=user_id, is_public=is_private)
             session.add(meme)
             await session.flush()
