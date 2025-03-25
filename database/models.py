@@ -109,7 +109,7 @@ class Meme(Base):
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     is_public: Mapped[bool] = mapped_column(Boolean, default=False)
     mime_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    file_id: Mapped[str] = mapped_column(String(255), nullable=True)
+    file_id: Mapped[str] = mapped_column(String(255), nullable=True, unique=True)
 
     # New column to represent the Telegram ID of the User who created the meme.
     # This references the unique tg_id field in User.

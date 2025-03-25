@@ -18,7 +18,7 @@ router = Router()
 class AddToGroup(StatesGroup):
     add_meme_to_group = State()
 
-@router.message(StateFilter(None))
+@router.message(StateFilter(AddToGroup.add_meme_to_group))
 async def add_meme_to_group(message: Message, state: FSMContext, meme_id: int):
     result = await get_user_groups(str(message.from_user.id))
 
@@ -27,6 +27,7 @@ async def add_meme_to_group(message: Message, state: FSMContext, meme_id: int):
     kb_dict = {
         "Send to all groups!": "callback_send_all",
         "Send to selected!": "callback_send_selected",
+        "KEEP PRIVATE": "callback_left_private",
         # "Make private": "callback_send_private",
         # "Make public": "callback_send_public",
     }
@@ -46,7 +47,7 @@ async def add_meme_to_group(message: Message, state: FSMContext, meme_id: int):
 
     await state.update_data(meme_id=meme_id)
     await state.update_data(keyboard=keyboard)
-    # await state.set_state(AddToGroup.add_meme_to_group)
+    await state.set_state(AddToGroup.add_meme_to_group)
     await message.answer(f"Choose groups to add meme to: \n"
                          f"Or ignore, to keep it private", reply_markup=InlineKeyboardMarkup(inline_keyboard=keyboard))
 
@@ -94,3 +95,7 @@ async def callback_send(callback: CallbackQuery, state: FSMContext):
         ...
 
 
+@router.callback_query(F.data.contains('left_private'), StateFilter(AddToGroup.add_meme_to_group))
+async def callback_left_private(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text("Added private!")
+    await state.clear()

@@ -123,7 +123,7 @@ async def add_uni_meme(message: Message, state: FSMContext):
 
         if len(await get_user_groups(str(message.from_user.id)))!=0:
             await add_meme_to_group(message=message, state=state, meme_id=meme_id)
-            await state.clear()
+            # await state.clear()
         else:
             await message.answer("Added!")
             await state.clear()

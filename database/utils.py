@@ -1,7 +1,7 @@
 import secrets
 
 import sqlalchemy
-from sqlalchemy import select, Boolean, bindparam, delete, distinct, text
+from sqlalchemy import select, Boolean, bindparam, delete, distinct, text, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.connection import sessionmanager, get_session
@@ -55,15 +55,29 @@ async def get_memes(search_text: str, media_type: str, user_id: str):
         query = (
             select(Meme)
             .distinct(Meme.id)
-            .join(GroupMeme, GroupMeme.meme_id == Meme.id)
-            .join(Group, Group.id == GroupMeme.group_id)
-            .join(UserGroup, UserGroup.group_id == Group.id)
-            .where(UserGroup.user_id == user_id)
-            .where(Meme.mime_type == media_type)
-            .where(Meme.user_tg_id == user_id)
-            .where(Meme.name.ilike(f"%{search_text}%"))
-
+            .join(GroupMeme, GroupMeme.meme_id == Meme.id,
+                  isouter=True)  # LEFT JOIN (since user-uploaded memes might not be in a group)
+            .join(Group, Group.id == GroupMeme.group_id, isouter=True)  # LEFT JOIN
+            .join(UserGroup, UserGroup.group_id == Group.id, isouter=True)  # LEFT JOIN
+            .where(
+                or_(
+                    # Condition 1: Meme is in a group the user belongs to
+                    (
+                            (UserGroup.user_id == user_id) &
+                            (Meme.mime_type == media_type) &
+                            (Meme.name.ilike(f"%{search_text}%"))
+                    ),
+                    # Condition 2: Meme was uploaded by the user
+                    (
+                            (Meme.user_tg_id == user_id) &
+                            (Meme.mime_type == media_type) &
+                            (Meme.name.ilike(f"%{search_text}%"))
+                    )
+                )
+            )
         )
+
+
         result = await session.execute(query)
         return result.scalars().all()
 
