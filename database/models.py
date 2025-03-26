@@ -106,7 +106,7 @@ class Meme(Base):
     __tablename__ = "meme"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(50), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
     is_public: Mapped[bool] = mapped_column(Boolean, default=False)
     mime_type: Mapped[str] = mapped_column(String(50), nullable=False)
     file_id: Mapped[str] = mapped_column(String(255), nullable=True, unique=True)
