@@ -9,7 +9,7 @@ from aiogram.types import Message, InputFile, FSInputFile, BufferedInputFile, Ke
 from aiogram.filters import Command, StateFilter
 
 from database.models import Meme
-from database.utils import create_group, add_user, get_all_user_memes, delete_group, delete_meme, get_memes
+from database.utils import create_group, add_user, delete_group, delete_meme, get_memes
 
 router = Router()
 
