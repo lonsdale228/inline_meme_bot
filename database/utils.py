@@ -1,7 +1,7 @@
 import secrets
 
 import sqlalchemy
-from sqlalchemy import select, Boolean, bindparam, delete, distinct, text, or_
+from sqlalchemy import select, Boolean, bindparam, delete, distinct, text, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.connection import sessionmanager, get_session
@@ -51,27 +51,31 @@ async def get_all_user_memes(user_id: str):
         return result.scalars().all()
 
 async def get_memes(search_text: str, media_type: str, user_id: str):
+
+    words = [word.strip() for word in search_text.split() if word.strip()]
+
     async for session in get_session():
         query = (
             select(Meme)
             .distinct(Meme.id)
-            .join(GroupMeme, GroupMeme.meme_id == Meme.id,
-                  isouter=True)  # LEFT JOIN (since user-uploaded memes might not be in a group)
-            .join(Group, Group.id == GroupMeme.group_id, isouter=True)  # LEFT JOIN
-            .join(UserGroup, UserGroup.group_id == Group.id, isouter=True)  # LEFT JOIN
+            .join(GroupMeme, GroupMeme.meme_id == Meme.id, isouter=True)
+            .join(Group, Group.id == GroupMeme.group_id, isouter=True)
+            .join(UserGroup, UserGroup.group_id == Group.id, isouter=True)
             .where(
                 or_(
                     # Condition 1: Meme is in a group the user belongs to
                     (
                             (UserGroup.user_id == user_id) &
-                            ((Meme.mime_type==media_type) if media_type!="*" else True) &
-                            (Meme.name.ilike(f"%{search_text}%"))
+                            ((Meme.mime_type == media_type) if media_type != "*" else True) &
+                            # Create AND conditions for each word
+                            and_(*[Meme.name.ilike(f"%{word}%") for word in words])
                     ),
                     # Condition 2: Meme was uploaded by the user
                     (
                             (Meme.user_tg_id == user_id) &
-                            ((Meme.mime_type==media_type) if media_type!="*" else True) &
-                            (Meme.name.ilike(f"%{search_text}%"))
+                            ((Meme.mime_type == media_type) if media_type != "*" else True) &
+                            # Create AND conditions for each word
+                            and_(*[Meme.name.ilike(f"%{word}%") for word in words])
                     )
                 )
             )
