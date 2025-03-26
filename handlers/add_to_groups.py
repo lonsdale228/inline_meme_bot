@@ -8,7 +8,8 @@ from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, C
 from aiogram.utils import keyboard
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from database.utils import get_user_groups, send_meme_to_selected_group
+from database.models import Group
+from database.utils import get_user_groups, send_meme_to_selected_group, add_meme_to_all_user_groups
 from loader import bot
 
 router = Router()
@@ -82,18 +83,18 @@ async def callback_change(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data.contains('send'), StateFilter(AddToGroup.add_meme_to_group))
 async def callback_send(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    meme_id: int = data["meme_id"]
 
     if "selected" in callback.data:
-        data = await state.get_data()
         groups_to_add: list = data["groups_to_add"]
-        meme_id: int = data["meme_id"]
         await send_meme_to_selected_group(groups_to_add, meme_id)
-        await callback.message.edit_text("Successfully sent meme!", reply_markup=InlineKeyboardMarkup(inline_keyboard=[]))
-        await state.clear()
-        ...
     elif "all" in callback.data:
-        ...
+        await add_meme_to_all_user_groups(user_id=str(callback.from_user.id), meme_id=meme_id)
 
+    await callback.message.edit_text("Successfully sent meme!",
+                                     reply_markup=InlineKeyboardMarkup(inline_keyboard=[]))
+    await state.clear()
 
 @router.callback_query(F.data.contains('left_private'), StateFilter(AddToGroup.add_meme_to_group))
 async def callback_left_private(callback: CallbackQuery, state: FSMContext):
