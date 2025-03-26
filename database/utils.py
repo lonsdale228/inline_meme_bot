@@ -130,7 +130,7 @@ async def add_user_to_group(user_id: str, invite_link_id: str):
 
 async def add_meme_to_all_user_groups(user_id: str, meme_id: int):
     async with sessionmanager.session() as session:
-        result: tuple[Group] = (await get_user_groups(user_id)).scalars().all()
+        result: tuple[Group] = await get_user_groups(user_id)
 
         for group in result:
             session.add(GroupMeme(meme_id=meme_id, group_id=group.id))
