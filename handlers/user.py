@@ -9,7 +9,7 @@ from aiogram.types import Message, InputFile, FSInputFile, BufferedInputFile, Ke
 from aiogram.filters import Command, StateFilter
 
 from database.models import Meme
-from database.utils import create_group, add_user, get_all_user_memes, delete_group, delete_meme
+from database.utils import create_group, add_user, get_all_user_memes, delete_group, delete_meme, get_memes
 
 router = Router()
 
@@ -52,7 +52,7 @@ async def name_group_handler(message: Message, state: FSMContext):
 
 @router.message(Command("export_memes"))
 async def export_memes_handler(message: Message):
-    memes = await get_all_user_memes(str(message.from_user.id))
+    memes = await get_memes(search_text="*", media_type="*", user_id=str(message.from_user.id))
     data = {}
     meme: Meme
     for meme in memes:
