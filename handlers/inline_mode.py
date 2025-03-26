@@ -130,6 +130,11 @@ async def show_user_gifs(inline_query: InlineQuery):
 
 
 
+@router.inline_query(F.query.startswith("http"))
+async def download_link(inline_query: InlineQuery):
+    
+    ...
+
 
 @router.inline_query()
 async def show_all_memes(inline_query: InlineQuery):

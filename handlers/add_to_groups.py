@@ -29,8 +29,6 @@ async def add_meme_to_group(message: Message, state: FSMContext, meme_id: int):
         "Send to all groups!": "callback_send_all",
         "Send to selected!": "callback_send_selected",
         "KEEP PRIVATE": "callback_left_private",
-        # "Make private": "callback_send_private",
-        # "Make public": "callback_send_public",
     }
 
     for i, group in enumerate(result):
