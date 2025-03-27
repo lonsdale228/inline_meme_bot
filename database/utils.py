@@ -11,6 +11,7 @@ from loader import logger
 
 async def add_meme(title: str, description: str, file_id: str, mime_type: str, user_id: str, is_private: bool = False) -> int:
     try:
+        session: AsyncSession
         async with sessionmanager.session() as session:
             try:
                 await add_user(user_id,False)
