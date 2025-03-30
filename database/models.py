@@ -1,5 +1,5 @@
 from typing import List
-from sqlalchemy import String, Boolean, ForeignKey, Integer
+from sqlalchemy import String, Boolean, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -109,7 +109,7 @@ class Meme(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     is_public: Mapped[bool] = mapped_column(Boolean, default=False)
     mime_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    file_id: Mapped[str] = mapped_column(String(255), nullable=True, unique=True)
+    file_id: Mapped[str] = mapped_column(String(255), nullable=False)
 
     # New column to represent the Telegram ID of the User who created the meme.
     # This references the unique tg_id field in User.
@@ -126,6 +126,10 @@ class Meme(Base):
     groups: Mapped[List[Group]] = relationship(
         secondary="group_meme",
         back_populates="memes"
+    )
+
+    __table_args__ = (
+        UniqueConstraint('file_id', 'user_tg_id', name='uix_field1_field2'),
     )
 
     def __repr__(self):
