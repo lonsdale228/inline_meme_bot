@@ -7,10 +7,10 @@ from sqlalchemy.orm import (
     relationship
 )
 
+
 class Base(DeclarativeBase):
     """Base class for all models."""
     pass
-
 
 
 class User(Base):
@@ -36,13 +36,7 @@ class User(Base):
         uselist=False
     )
 
-    # One-to-many: a user can create many memes
-    memes_created: Mapped[List["Meme"]] = relationship(
-        "Meme",
-        back_populates="creator",
-        foreign_keys="[Meme.user_tg_id]"
-    )
-
+    # Many-to-many: a user can access many memes (via the association table user_meme)
     accessed_memes: Mapped[List["Meme"]] = relationship(
         "Meme",
         secondary="user_meme",
@@ -61,12 +55,8 @@ class BotAdmin(Base):
     __tablename__ = "bot_admin"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    # ForeignKey points to user.tg_id, which is unique
-    tg_id: Mapped[str] = mapped_column(
-        String, ForeignKey("user.tg_id"), unique=True
-    )
+    tg_id: Mapped[str] = mapped_column(String, ForeignKey("user.tg_id"), unique=True)
 
-    # One-to-one relationship back to User
     user: Mapped[User] = relationship(
         "User",
         back_populates="bot_admin"
@@ -82,16 +72,13 @@ class Group(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
     description: Mapped[str] = mapped_column(String(255), nullable=True)
-
     invite_link_id: Mapped[str] = mapped_column(String(255), nullable=True)
 
     # Admin column (references the User who is the admin)
     admin_id: Mapped[str] = mapped_column(ForeignKey("user.tg_id"), nullable=True)
     admin: Mapped[User] = relationship(
         "User",
-        back_populates="admin_of_groups",
-        # optional: if you want to load the admin user eagerly, you can add:
-        # lazy="joined"
+        back_populates="admin_of_groups"
     )
 
     # Many-to-many: a group can have many users
@@ -118,18 +105,7 @@ class Meme(Base):
     mime_type: Mapped[str] = mapped_column(String(50), nullable=False)
     file_id: Mapped[str] = mapped_column(String(255), nullable=True, unique=True)
 
-    # New column to represent the Telegram ID of the User who created the meme.
-    # This references the unique tg_id field in User.
-    user_tg_id: Mapped[str] = mapped_column(String, ForeignKey("user.tg_id"), nullable=False)
-
-    # Relationship to the User who created the meme.
-    creator: Mapped[User] = relationship(
-        "User",
-        back_populates="memes_created",
-        foreign_keys="[Meme.user_tg_id]"
-    )
-
-    # Many-to-many: a meme can belong to many groups
+    # Removed user_tg_id column and creator relationship to avoid duplication.
     groups: Mapped[List[Group]] = relationship(
         secondary="group_meme",
         back_populates="memes"
@@ -143,7 +119,7 @@ class Meme(Base):
     )
 
     def __repr__(self):
-        return f"<Meme(id={self.id}, name={self.name}, url={self.url})>"
+        return f"<Meme(id={self.id}, name={self.name})>"
 
 
 class UserMeme(Base):
