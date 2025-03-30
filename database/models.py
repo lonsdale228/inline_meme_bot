@@ -43,13 +43,6 @@ class User(Base):
         foreign_keys="[Meme.user_tg_id]"
     )
 
-    accessed_memes: Mapped[List["Meme"]] = relationship(
-        "Meme",
-        secondary="user_meme",
-        back_populates="accessed_by_users",
-        lazy="selectin"
-    )
-
     def __repr__(self):
         return f"<User(id={self.id}, tg_id={self.tg_id})>"
 
@@ -135,23 +128,8 @@ class Meme(Base):
         back_populates="memes"
     )
 
-    accessed_by_users: Mapped[List["User"]] = relationship(
-        "User",
-        secondary="user_meme",
-        back_populates="accessed_memes",
-        lazy="selectin"
-    )
-
     def __repr__(self):
         return f"<Meme(id={self.id}, name={self.name}, url={self.url})>"
-
-
-class UserMeme(Base):
-    __tablename__ = "user_meme"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[str] = mapped_column(ForeignKey("user.tg_id"), nullable=False)
-    meme_id: Mapped[int] = mapped_column(ForeignKey("meme.id"), nullable=False)
 
 
 class UserGroup(Base):

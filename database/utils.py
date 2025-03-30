@@ -5,55 +5,28 @@ from sqlalchemy import select, Boolean, bindparam, delete, distinct, text, or_, 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.connection import sessionmanager, get_session
-from database.models import Meme, User, Group, UserGroup, GroupMeme, UserMeme
+from database.models import Meme, User, Group, UserGroup, GroupMeme
 from loader import logger
 
 
 async def add_meme(title: str, description: str, file_id: str, mime_type: str, user_id: str, is_private: bool = False) -> int:
     try:
         session: AsyncSession
-        async for session in get_session():
+        async with sessionmanager.session() as session:
             try:
                 await add_user(user_id,False)
-            except sqlalchemy.exc.IntegrityError:
-                logger.info("User already exists!")
+            except Exception as e:
+                ...
 
-            user: User = (await session.execute(select(User).where(User.tg_id == user_id))).scalars().first()
-
-            meme = Meme(name=title, file_id=file_id, mime_type=mime_type, user_tg_id=user_id,
-                        is_public=(not is_private))
-
-            user.accessed_memes.append(meme)
-
+            meme = Meme(name=title, file_id=file_id, mime_type=mime_type, user_tg_id=user_id, is_public=(not is_private))
+            session.add(meme)
             await session.flush()
             meme_id: int = meme.id
-
             await session.commit()
-
             return meme_id
-
     except sqlalchemy.exc.IntegrityError:
-        logger.info("Meme already exists!")
+        logger.info("Value already exists!")
         return -1
-
-# async def add_meme(title: str, description: str, file_id: str, mime_type: str, user_id: str, is_private: bool = False) -> int:
-#     try:
-#         session: AsyncSession
-#         async with sessionmanager.session() as session:
-#             try:
-#                 await add_user(user_id,False)
-#             except Exception as e:
-#                 ...
-#
-#             meme = Meme(name=title, file_id=file_id, mime_type=mime_type, user_tg_id=user_id, is_public=(not is_private))
-#             session.add(meme)
-#             await session.flush()
-#             meme_id: int = meme.id
-#             await session.commit()
-#             return meme_id
-#     except sqlalchemy.exc.IntegrityError:
-#         logger.info("Value already exists!")
-#         return -1
 
 
 # group = Group(name=group_name, admin_id=user_id, invite_link_id=secrets.token_hex(16))
@@ -89,7 +62,6 @@ async def get_memes(search_text: str, media_type: str, user_id: str):
             .join(GroupMeme, GroupMeme.meme_id == Meme.id, isouter=True)
             .join(Group, Group.id == GroupMeme.group_id, isouter=True)
             .join(UserGroup, UserGroup.group_id == Group.id, isouter=True)
-            .join(UserMeme, UserMeme.meme_id == Meme.id, isouter=True)
             .where(
                 or_(
                    (
@@ -98,7 +70,7 @@ async def get_memes(search_text: str, media_type: str, user_id: str):
                             and_(*[Meme.name.ilike(f"%{word}%") for word in words]) if search_text!="*" else True
                     ),
                     (
-                            (UserMeme.user_id == user_id) &
+                            (Meme.user_tg_id == user_id) &
                             ((Meme.mime_type == media_type) if media_type != "*" else True) &
                             and_(*[Meme.name.ilike(f"%{word}%") for word in words]) if search_text!="*" else True
                     )
@@ -131,7 +103,7 @@ async def get_users():
 
 async def create_group(user_id: str, group_name: str, token: str) -> bool:
     try:
-        async for session in get_session():
+        async with sessionmanager.session() as session:
             group = Group(name=group_name, admin_id=user_id, invite_link_id=token)
             session.add(group)
             await session.flush()
@@ -146,7 +118,7 @@ async def create_group(user_id: str, group_name: str, token: str) -> bool:
 
 
 async def add_user_to_group(user_id: str, invite_link_id: str):
-    async for session in get_session():
+    async with sessionmanager.session() as session:
         result = await session.execute(select(Group).where(Group.invite_link_id == invite_link_id))
         group: Group = result.scalars().first()
 
@@ -154,7 +126,7 @@ async def add_user_to_group(user_id: str, invite_link_id: str):
         await session.commit()
 
 async def add_meme_to_all_user_groups(user_id: str, meme_id: int):
-    async for session in get_session():
+    async with sessionmanager.session() as session:
         result: tuple[Group] = await get_user_groups(user_id)
 
         for group in result:
@@ -171,14 +143,14 @@ async def get_user_groups(user_id: str):
 
 
 async def send_meme_to_selected_group(groups_id: list[int], meme_id: int):
-    async for session in get_session():
+    async with sessionmanager.session() as session:
         for group_id in groups_id:
             session.add(GroupMeme(group_id=group_id, meme_id=meme_id))
 
         await session.commit()
 
 async def send_meme_to_all(user_id: str, meme_id: int):
-    async for session in get_session():
+    async with sessionmanager.session() as session:
         user_groups = await get_user_groups(user_id)
         for group in user_groups:
             session.add(GroupMeme(group_id=group.id, meme_id=meme_id))
@@ -188,7 +160,7 @@ async def send_meme_to_all(user_id: str, meme_id: int):
 async def delete_group(group_id: int, user_id: str) -> bool:
     admin_groups = await get_group_admin(group_id, user_id)
     if admin_groups:
-        async for session in get_session():
+        async with sessionmanager.session() as session:
             res = await session.execute(select(Meme)
                                           .join(GroupMeme, Meme.id == GroupMeme.meme_id)
                                           .where(GroupMeme.group_id == group_id))
@@ -207,7 +179,7 @@ async def delete_group(group_id: int, user_id: str) -> bool:
         return False
 
 async def delete_meme(meme_file_id: str, user_id: str) -> bool:
-    async for session in get_session():
+    async with sessionmanager.session() as session:
         result = await session.execute(select(Meme).where(Meme.file_id == meme_file_id))
 
         meme: Meme = result.scalars().first()
@@ -220,6 +192,6 @@ async def delete_meme(meme_file_id: str, user_id: str) -> bool:
             return False
 
 async def get_group_admin(group_id: int, user_id: str):
-    async for session in get_session():
+    async with sessionmanager.session() as session:
         result = await session.execute(select(Group).where(Group.admin_id == user_id).where(Group.id == group_id))
         return result.scalars().all()
