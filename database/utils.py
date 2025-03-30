@@ -10,31 +10,31 @@ from loader import logger
 
 
 async def add_meme(title: str, description: str, file_id: str, mime_type: str, user_id: str, is_private: bool = False) -> int:
-    try:
-        session: AsyncSession
-        async for session in get_session():
-            try:
-                await add_user(user_id,False)
-            except sqlalchemy.exc.IntegrityError:
-                logger.info("User already exists!")
+    # try:
+    session: AsyncSession
+    async for session in get_session():
+        try:
+            await add_user(user_id,False)
+        except sqlalchemy.exc.IntegrityError:
+            logger.info("User already exists!")
 
-            user: User = (await session.execute(select(User).where(User.tg_id == user_id))).scalars().first()
+        user: User = (await session.execute(select(User).where(User.tg_id == user_id))).scalars().first()
 
-            meme = Meme(name=title, file_id=file_id, mime_type=mime_type,
-                        is_public=(not is_private))
+        meme = Meme(name=title, file_id=file_id, mime_type=mime_type,
+                    is_public=(not is_private))
 
-            user.accessed_memes.append(meme)
+        user.accessed_memes.append(meme)
 
-            await session.flush()
-            meme_id: int = meme.id
+        await session.flush()
+        meme_id: int = meme.id
 
-            await session.commit()
+        await session.commit()
 
-            return meme_id
+        return meme_id
 
-    except sqlalchemy.exc.IntegrityError:
-        logger.info("Meme already exists!")
-        return -1
+    # except sqlalchemy.exc.IntegrityError:
+    #     logger.info("Meme already exists!")
+    #     return -1
 
 # async def add_meme(title: str, description: str, file_id: str, mime_type: str, user_id: str, is_private: bool = False) -> int:
 #     try:
