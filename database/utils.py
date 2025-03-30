@@ -12,7 +12,7 @@ from loader import logger
 async def add_meme(title: str, description: str, file_id: str, mime_type: str, user_id: str, is_private: bool = False) -> int:
     try:
         session: AsyncSession
-        async with sessionmanager.session() as session:
+        async for session in get_session():
             try:
                 await add_user(user_id,False)
             except Exception as e:
@@ -103,7 +103,7 @@ async def get_users():
 
 async def create_group(user_id: str, group_name: str, token: str) -> bool:
     try:
-        async with sessionmanager.session() as session:
+        async for session in get_session():
             group = Group(name=group_name, admin_id=user_id, invite_link_id=token)
             session.add(group)
             await session.flush()
@@ -118,7 +118,7 @@ async def create_group(user_id: str, group_name: str, token: str) -> bool:
 
 
 async def add_user_to_group(user_id: str, invite_link_id: str):
-    async with sessionmanager.session() as session:
+    async for session in get_session():
         result = await session.execute(select(Group).where(Group.invite_link_id == invite_link_id))
         group: Group = result.scalars().first()
 
@@ -126,7 +126,7 @@ async def add_user_to_group(user_id: str, invite_link_id: str):
         await session.commit()
 
 async def add_meme_to_all_user_groups(user_id: str, meme_id: int):
-    async with sessionmanager.session() as session:
+    async for session in get_session():
         result: tuple[Group] = await get_user_groups(user_id)
 
         for group in result:
@@ -143,14 +143,14 @@ async def get_user_groups(user_id: str):
 
 
 async def send_meme_to_selected_group(groups_id: list[int], meme_id: int):
-    async with sessionmanager.session() as session:
+    async for session in get_session():
         for group_id in groups_id:
             session.add(GroupMeme(group_id=group_id, meme_id=meme_id))
 
         await session.commit()
 
 async def send_meme_to_all(user_id: str, meme_id: int):
-    async with sessionmanager.session() as session:
+    async for session in get_session():
         user_groups = await get_user_groups(user_id)
         for group in user_groups:
             session.add(GroupMeme(group_id=group.id, meme_id=meme_id))
@@ -160,7 +160,7 @@ async def send_meme_to_all(user_id: str, meme_id: int):
 async def delete_group(group_id: int, user_id: str) -> bool:
     admin_groups = await get_group_admin(group_id, user_id)
     if admin_groups:
-        async with sessionmanager.session() as session:
+        async for session in get_session():
             res = await session.execute(select(Meme)
                                           .join(GroupMeme, Meme.id == GroupMeme.meme_id)
                                           .where(GroupMeme.group_id == group_id))
@@ -179,7 +179,7 @@ async def delete_group(group_id: int, user_id: str) -> bool:
         return False
 
 async def delete_meme(meme_file_id: str, user_id: str) -> bool:
-    async with sessionmanager.session() as session:
+    async for session in get_session():
         result = await session.execute(select(Meme).where(Meme.file_id == meme_file_id))
 
         meme: Meme = result.scalars().first()
@@ -192,6 +192,6 @@ async def delete_meme(meme_file_id: str, user_id: str) -> bool:
             return False
 
 async def get_group_admin(group_id: int, user_id: str):
-    async with sessionmanager.session() as session:
+    async for session in get_session():
         result = await session.execute(select(Group).where(Group.admin_id == user_id).where(Group.id == group_id))
         return result.scalars().all()
