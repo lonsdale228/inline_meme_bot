@@ -1,5 +1,5 @@
 from typing import List
-from sqlalchemy import String, Boolean, ForeignKey, Integer
+from sqlalchemy import String, Boolean, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -7,10 +7,10 @@ from sqlalchemy.orm import (
     relationship
 )
 
-
 class Base(DeclarativeBase):
     """Base class for all models."""
     pass
+
 
 
 class User(Base):
@@ -36,12 +36,11 @@ class User(Base):
         uselist=False
     )
 
-    # Many-to-many: a user can access many memes (via the association table user_meme)
-    accessed_memes: Mapped[List["Meme"]] = relationship(
+    # One-to-many: a user can create many memes
+    memes_created: Mapped[List["Meme"]] = relationship(
         "Meme",
-        secondary="user_meme",
-        back_populates="accessed_by_users",
-        lazy="selectin"
+        back_populates="creator",
+        foreign_keys="[Meme.user_tg_id]"
     )
 
     def __repr__(self):
@@ -55,8 +54,12 @@ class BotAdmin(Base):
     __tablename__ = "bot_admin"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    tg_id: Mapped[str] = mapped_column(String, ForeignKey("user.tg_id"), unique=True)
+    # ForeignKey points to user.tg_id, which is unique
+    tg_id: Mapped[str] = mapped_column(
+        String, ForeignKey("user.tg_id"), unique=True
+    )
 
+    # One-to-one relationship back to User
     user: Mapped[User] = relationship(
         "User",
         back_populates="bot_admin"
@@ -72,13 +75,16 @@ class Group(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
     description: Mapped[str] = mapped_column(String(255), nullable=True)
+
     invite_link_id: Mapped[str] = mapped_column(String(255), nullable=True)
 
     # Admin column (references the User who is the admin)
     admin_id: Mapped[str] = mapped_column(ForeignKey("user.tg_id"), nullable=True)
     admin: Mapped[User] = relationship(
         "User",
-        back_populates="admin_of_groups"
+        back_populates="admin_of_groups",
+        # optional: if you want to load the admin user eagerly, you can add:
+        # lazy="joined"
     )
 
     # Many-to-many: a group can have many users
@@ -103,32 +109,31 @@ class Meme(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     is_public: Mapped[bool] = mapped_column(Boolean, default=False)
     mime_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    file_id: Mapped[str] = mapped_column(String(255), nullable=True)
+    file_id: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    # Removed user_tg_id column and creator relationship to avoid duplication.
+    # New column to represent the Telegram ID of the User who created the meme.
+    # This references the unique tg_id field in User.
+    user_tg_id: Mapped[str] = mapped_column(String, ForeignKey("user.tg_id"), nullable=False)
+
+    # Relationship to the User who created the meme.
+    creator: Mapped[User] = relationship(
+        "User",
+        back_populates="memes_created",
+        foreign_keys="[Meme.user_tg_id]"
+    )
+
+    # Many-to-many: a meme can belong to many groups
     groups: Mapped[List[Group]] = relationship(
         secondary="group_meme",
         back_populates="memes"
     )
 
-    accessed_by_users: Mapped[List["User"]] = relationship(
-        "User",
-        secondary="user_meme",
-        back_populates="accessed_memes",
-        lazy="selectin"
+    __table_args__ = (
+        UniqueConstraint('file_id', 'user_tg_id', name='uix_field1_field2'),
     )
 
     def __repr__(self):
-        return f"<Meme(id={self.id}, name={self.name})>"
-
-
-class UserMeme(Base):
-    __tablename__ = "user_meme"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-
-    user_id: Mapped[str] = mapped_column(ForeignKey("user.tg_id"), nullable=False)
-    meme_id: Mapped[int] = mapped_column(ForeignKey("meme.id"), nullable=False)
+        return f"<Meme(id={self.id}, name={self.name}, url={self.url})>"
 
 
 class UserGroup(Base):
