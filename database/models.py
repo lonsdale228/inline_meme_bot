@@ -103,7 +103,7 @@ class Meme(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     is_public: Mapped[bool] = mapped_column(Boolean, default=False)
     mime_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    file_id: Mapped[str] = mapped_column(String(255), nullable=True, unique=True)
+    file_id: Mapped[str] = mapped_column(String(255), nullable=True)
 
     # Removed user_tg_id column and creator relationship to avoid duplication.
     groups: Mapped[List[Group]] = relationship(
@@ -126,6 +126,7 @@ class UserMeme(Base):
     __tablename__ = "user_meme"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
     user_id: Mapped[str] = mapped_column(ForeignKey("user.tg_id"), nullable=False)
     meme_id: Mapped[int] = mapped_column(ForeignKey("meme.id"), nullable=False)
 
