@@ -20,7 +20,7 @@ async def add_meme(title: str, description: str, file_id: str, mime_type: str, u
 
             user: User = (await session.execute(select(User).where(User.tg_id == user_id))).scalars().first()
 
-            meme = Meme(name=title, file_id=file_id, mime_type=mime_type, user_tg_id=user_id,
+            meme = Meme(name=title, file_id=file_id, mime_type=mime_type,
                         is_public=(not is_private))
 
             user.accessed_memes.append(meme)
