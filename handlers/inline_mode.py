@@ -205,9 +205,9 @@ async def show_all_memes(inline_query: InlineQuery):
 
     search_text = inline_query.query.strip()
 
-    start_time = datetime.now()
+    # start_time = datetime.now()
     meme_list = await get_memes(search_text, "*", str(inline_query.from_user.id))
-    end_time = datetime.now()
+    # end_time = datetime.now()
 
     for meme in meme_list:
         match meme.mime_type:
@@ -243,4 +243,4 @@ async def show_all_memes(inline_query: InlineQuery):
                  ))
 
     await inline_query.answer(results, cache_time=0, is_personal=True)
-    await bot.send_message(inline_query.from_user.id, str(end_time - start_time))
+    # await bot.send_message(inline_query.from_user.id, str(end_time - start_time))
