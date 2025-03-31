@@ -1,3 +1,5 @@
+import random
+from datetime import datetime
 
 from aiogram import F, Router
 from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent, InlineQueryResultVideo, \
@@ -203,7 +205,9 @@ async def show_all_memes(inline_query: InlineQuery):
 
     search_text = inline_query.query.strip()
 
+    start_time = datetime.now()
     meme_list = await get_memes(search_text, "*", str(inline_query.from_user.id))
+    end_time = datetime.now()
 
     for meme in meme_list:
         match meme.mime_type:
@@ -239,3 +243,12 @@ async def show_all_memes(inline_query: InlineQuery):
                  ))
 
     await inline_query.answer(results, cache_time=0, is_personal=True)
+    await inline_query.answer([
+        InlineQueryResultArticle(
+            id = str(random.randint(1,1000000)),
+            title = "Aboba",
+            input_message_content = InputTextMessageContent(
+                message_text = str(end_time-start_time),
+            )
+        )
+    ], cache_time=0, is_personal=True)
