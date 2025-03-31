@@ -13,14 +13,18 @@ router = Router()
 guide = """
 To use this bot, firstly you need drop here any meme you wanna save!
 
-Then you can access to this meme with: @inlinusbot meme <keywords>
-Bot will give you hints.
-All meme are sorted to groups:
+Then you can access to this meme with: @inlinusbot <keywords>
 
-gif - GIF
-video - Videos
-st - Stickers
-audio - Audios
+All meme are sorted to groups, to sort them, use
+@inlinusbot p <keywords>
+
+All sort groups:
+
+g - GIF
+v - Videos
+s - Stickers
+a - Audios
+p - Photos
 
 Also you can create groups, to share meme with your friends, 
 and only to your friends.

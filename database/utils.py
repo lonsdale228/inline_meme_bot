@@ -127,14 +127,14 @@ async def add_user_to_group(user_id: str, invite_link_id: str):
 
 async def add_meme_to_all_user_groups(user_id: str, meme_id: int):
     async for session in get_session():
-        result: tuple[Group] = await get_user_groups(user_id)
+        result = await get_user_groups(user_id)
 
         for group in result:
             session.add(GroupMeme(meme_id=meme_id, group_id=group.id))
 
         await session.commit()
 
-async def get_user_groups(user_id: str):
+async def get_user_groups(user_id: str) -> list[Group]:
     async for session in get_session():
         result = await session.execute(select(Group)
                                        .join(UserGroup, Group.id == UserGroup.group_id)

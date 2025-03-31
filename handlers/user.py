@@ -5,11 +5,12 @@ import secrets
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import Message, InputFile, FSInputFile, BufferedInputFile, KeyboardButton, ReplyKeyboardMarkup
+from aiogram.types import Message, InputFile, FSInputFile, BufferedInputFile, KeyboardButton, ReplyKeyboardMarkup, \
+    InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import Command, StateFilter
 
-from database.models import Meme
-from database.utils import create_group, add_user, delete_group, delete_meme, get_memes
+from database.models import Meme, Group
+from database.utils import create_group, add_user, delete_group, delete_meme, get_memes, get_user_groups
 
 router = Router()
 
@@ -109,7 +110,21 @@ async def delete_meme_handler(message: Message, state: FSMContext):
         else "You don't own this meme!"
     )
 
+@router.message(Command("show_groups"))
+async def show_groups_handler(message: Message):
+    group_list = await get_user_groups(str(message.from_user.id))
+    kb = []
+    for group in group_list:
+        kb.append(
+            [
+                InlineKeyboardButton(
+                    text=group.name,
+                    callback_data=f"callback_group_edit/{group.id}"
+                )
+            ]
+        )
 
+    await message.answer("Your groups: ",reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
 
 # class DeleteGroup(StatesGroup):
 #     delete_group = State()
