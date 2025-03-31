@@ -101,8 +101,8 @@ async def delete_meme_handler(message: Message, state: FSMContext):
         await message.answer("Wrong file type!")
         await state.clear()
         return
-    await message.answer(f"{file_source.file_id}")
-    is_deleted = await delete_meme(file_source.file_id, str(message.from_user.id))
+    await message.answer(f"{file_source.file_unique_id}")
+    is_deleted = await delete_meme(file_source.file_unique_id, str(message.from_user.id))
     await state.clear()
 
     await message.answer(
