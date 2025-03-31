@@ -8,7 +8,7 @@ from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessag
 from database.connection import get_session
 from database.models import Meme
 from database.utils import get_memes
-from loader import logger
+from loader import logger, bot
 
 router = Router()
 
@@ -243,12 +243,4 @@ async def show_all_memes(inline_query: InlineQuery):
                  ))
 
     await inline_query.answer(results, cache_time=0, is_personal=True)
-    await inline_query.answer([
-        InlineQueryResultArticle(
-            id = str(random.randint(1,1000000)),
-            title = "Aboba",
-            input_message_content = InputTextMessageContent(
-                message_text = str(end_time-start_time),
-            )
-        )
-    ], cache_time=0, is_personal=True)
+    await bot.send_message(inline_query.from_user.id, str(end_time - start_time))
