@@ -12,9 +12,9 @@ jobs:
       - name: SSH and deploy to host machine
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
+          host: ${{ sec.HOST }}
+          username: ${{ sec.USERNAME }}
+          password: ${{ sec.PASSWORD }}
           script: |
             cd /home/centos/tgbots/inline_meme_bot
             git pull
