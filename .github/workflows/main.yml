@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: master
+    environment: sec
     steps:
       - name: SSH and deploy to host machine
         uses: appleboy/ssh-action@master
