@@ -9,7 +9,7 @@ from database.models import Meme, User, Group, UserGroup, GroupMeme
 from loader import logger
 
 
-async def add_meme(title: str, description: str, file_id: str, mime_type: str, user_id: str, is_private: bool = False) -> int:
+async def add_meme(title: str, description: str, file_id: str, file_unique_id:str, mime_type: str, user_id: str, is_private: bool = False) -> int:
     try:
         session: AsyncSession
         async for session in get_session():
@@ -18,7 +18,7 @@ async def add_meme(title: str, description: str, file_id: str, mime_type: str, u
             except Exception as e:
                 ...
 
-            meme = Meme(name=title, file_id=file_id, mime_type=mime_type, user_tg_id=user_id, is_public=(not is_private))
+            meme = Meme(name=title, file_id=file_id,file_unique_id=file_unique_id, mime_type=mime_type, user_tg_id=user_id, is_public=(not is_private))
             session.add(meme)
             await session.flush()
             meme_id: int = meme.id
@@ -178,9 +178,9 @@ async def delete_group(group_id: int, user_id: str) -> bool:
     else:
         return False
 
-async def delete_meme(meme_file_id: str, user_id: str) -> bool:
+async def delete_meme(meme_unique_file_id: str, user_id: str) -> bool:
     async for session in get_session():
-        result = await session.execute(select(Meme).where(Meme.file_id == meme_file_id))
+        result = await session.execute(select(Meme).where(Meme.file_unique_id == meme_unique_file_id))
 
         meme: Meme = result.scalars().first()
 

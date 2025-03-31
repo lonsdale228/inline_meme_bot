@@ -28,22 +28,27 @@ async def meme_handler(message: Message, state: FSMContext):
 
     if message.sticker:
         await state.update_data(meme_file_id=message.sticker.file_id)
+        await state.update_data(meme_unique_file_id=message.sticker.file_unique_id)
         await send_msg("sticker")
         return
     if message.photo:
         await state.update_data(meme_file_id=message.photo[0].file_id)
+        await state.update_data(meme_unique_file_id=message.photo[0].file_unique_id)
         await send_msg("photo")
         return
     elif message.video:
         await state.update_data(meme_file_id=message.video.file_id)
+        await state.update_data(meme_unique_file_id=message.video.file_unique_id)
         await send_msg("video")
         return
     elif message.animation:
         await state.update_data(meme_file_id=message.animation.file_id)
+        await state.update_data(meme_unique_file_id=message.animation.file_unique_id)
         await send_msg("gif")
         return
     elif message.audio:
         await state.update_data(meme_file_id=message.audio.file_id)
+        await state.update_data(meme_unique_file_id=message.audio.file_unique_id)
         await send_msg("audio")
         return
     else:
@@ -60,7 +65,7 @@ async def add_uni_meme(message: Message, state: FSMContext):
 
     meme_id = await add_meme(title=meme_name, description="", mime_type=data["mime_type"], file_id=data['meme_file_id'],
                              is_private=True,
-                             user_id=str(message.from_user.id))
+                             user_id=str(message.from_user.id), file_unique_id=data['meme_unique_file_id'])
 
     if meme_id != -1:
         await state.set_state(AddToGroup.add_meme_to_group)

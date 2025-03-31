@@ -110,7 +110,7 @@ class Meme(Base):
     is_public: Mapped[bool] = mapped_column(Boolean, default=False)
     mime_type: Mapped[str] = mapped_column(String(50), nullable=False)
     file_id: Mapped[str] = mapped_column(String(255), nullable=False)
-
+    file_unique_id: Mapped[str] = mapped_column(String(255), nullable=False)
     # New column to represent the Telegram ID of the User who created the meme.
     # This references the unique tg_id field in User.
     user_tg_id: Mapped[str] = mapped_column(String, ForeignKey("user.tg_id"), nullable=False)
@@ -129,12 +129,11 @@ class Meme(Base):
     )
 
     __table_args__ = (
-        UniqueConstraint('file_id', 'user_tg_id', name='uix_field1_field2'),
+        UniqueConstraint('file_unique_id', 'user_tg_id', name='uix_field1_field2'),
     )
 
     def __repr__(self):
         return f"<Meme(id={self.id}, name={self.name}, url={self.url})>"
-
 
 class UserGroup(Base):
     """
