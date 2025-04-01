@@ -127,9 +127,9 @@ async def show_groups_handler(message: Message):
 
     try:
         t = message.text
-        await message.answer("Your groups msg: ", reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
+        await message.answer("Your groups: ", reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
     except AttributeError:
-        await message.message.edit_text("Your groups call: ", reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
+        await message.message.edit_text("Your groups: ", reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
 
 
 @router.callback_query(F.data.contains("callback_group_edit"))
