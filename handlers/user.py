@@ -6,7 +6,7 @@ from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, InputFile, FSInputFile, BufferedInputFile, KeyboardButton, ReplyKeyboardMarkup, \
-    InlineKeyboardMarkup, InlineKeyboardButton
+    InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.filters import Command, StateFilter
 
 from database.models import Meme, Group
@@ -110,8 +110,9 @@ async def delete_meme_handler(message: Message, state: FSMContext):
         else "You don't own this meme!"
     )
 
+@router.callback_query(F.data.contains("callback_back_to_menu"))
 @router.message(Command("show_groups"))
-async def show_groups_handler(message: Message):
+async def show_groups_handler(message: Message = None, callback_query: CallbackQuery = None):
     group_list = await get_user_groups(str(message.from_user.id))
     kb = []
     for group in group_list:
@@ -124,7 +125,29 @@ async def show_groups_handler(message: Message):
             ]
         )
 
-    await message.answer("Your groups: ",reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
+    if message:
+        await message.answer("Your groups: ",reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
+    else:
+        await callback_query.message.edit_text("Your groups: ",reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
+
+
+@router.callback_query(F.data.contains("callback_group_edit"))
+async def callback_group_edit_handler(callback_query: CallbackQuery):
+    group_id = int(callback_query.data.split("/")[1])
+
+    kb = [
+        [InlineKeyboardButton(
+            text = "❌ Leave from group", callback_data=f"callback_group_remove/{group_id}"
+        )],
+        [InlineKeyboardButton(
+            text = "👥 Manage group members", callback_data=f"callback_edit_members/{group_id}"
+        )],
+        [InlineKeyboardButton(
+            text = "🔙 Back", callback_data="callback_back_to_menu"
+        )]
+    ]
+    await callback_query.message.edit_text(text="Choose option:", reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
+
 
 # class DeleteGroup(StatesGroup):
 #     delete_group = State()
