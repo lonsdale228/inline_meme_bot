@@ -126,9 +126,9 @@ async def show_groups_handler(message: Message = None, callback_query: CallbackQ
         )
 
     if message:
-        await message.answer("Your groups: ",reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
+        await message.answer("Your groups msg: ",reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
     else:
-        await callback_query.message.edit_text("Your groups: ",reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
+        await callback_query.message.edit_text("Your groups call: ", reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
 
 
 @router.callback_query(F.data.contains("callback_group_edit"))
