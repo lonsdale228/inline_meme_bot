@@ -125,7 +125,7 @@ async def show_groups_handler(message: Message = None, callback_query: CallbackQ
             ]
         )
 
-    if message:
+    if message.text:
         await message.answer("Your groups msg: ",reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
     else:
         await callback_query.message.edit_text("Your groups call: ", reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
