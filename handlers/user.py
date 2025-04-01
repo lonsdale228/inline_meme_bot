@@ -112,7 +112,7 @@ async def delete_meme_handler(message: Message, state: FSMContext):
 
 @router.callback_query(F.data.contains("callback_back_to_menu"))
 @router.message(Command("show_groups"))
-async def show_groups_handler(message: Message = None, callback_query: CallbackQuery = None):
+async def show_groups_handler(message: Message | CallbackQuery):
     group_list = await get_user_groups(str(message.from_user.id))
     kb = []
     for group in group_list:
@@ -125,10 +125,10 @@ async def show_groups_handler(message: Message = None, callback_query: CallbackQ
             ]
         )
 
-    if message is not None:
+    if not message.data:
         await message.answer("Your groups msg: ",reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
     else:
-        await callback_query.message.edit_text("Your groups call: ", reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
+        await message.message.edit_text("Your groups call: ", reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
 
 
 @router.callback_query(F.data.contains("callback_group_edit"))
