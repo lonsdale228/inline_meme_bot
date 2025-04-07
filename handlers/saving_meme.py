@@ -5,12 +5,15 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message
 
 from database.utils import add_meme, get_user_groups
+from filters.chat_type import ChatTypeFilter
 from handlers.add_to_groups import AddToGroup, add_meme_to_group
 
 router = Router()
+router.message.filter(ChatTypeFilter(chat_type=["sender", "private"]))
 
 class NameMeme(StatesGroup):
     naming_meme = State()
+
 
 
 @router.message(F.photo, StateFilter(None))
@@ -19,7 +22,7 @@ class NameMeme(StatesGroup):
 @router.message(F.sticker, StateFilter(None))
 @router.message(F.animation, StateFilter(None))
 async def meme_handler(message: Message, state: FSMContext):
-
+    await message.answer(str(message.chat.id))
     async def send_msg(mime_type):
         await state.update_data(mime_type=mime_type)
         await message.answer("Enter meme name/keywords for future searching!")
