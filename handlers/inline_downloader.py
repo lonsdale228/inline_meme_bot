@@ -69,7 +69,7 @@ async def chosen_inline_result_query(chosen_result: ChosenInlineResult):
     inline_msg_id: str = chosen_result.inline_message_id
     inline_query = chosen_result.query.strip()
 
-    await download_video(url=inline_query, unique_file_id=chosen_result.from_user.id,
+    await download_video(url=inline_query, unique_file_id=str(uuid.uuid4()),
                          inline_msg_id=inline_msg_id)
 
 
