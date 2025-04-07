@@ -1,7 +1,6 @@
 import asyncio
-import os
 
-from aiogram import Dispatcher, Bot
+from aiogram import Dispatcher
 
 from handlers.inline_mode import router as inline_router
 from handlers.start import router as start_router

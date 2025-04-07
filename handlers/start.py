@@ -1,12 +1,9 @@
-from doctest import master
-
 from aiogram import Router
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from database.models import User
-from database.utils import get_users, add_user_to_group
+from database.utils import add_user_to_group
 
 router = Router()
 

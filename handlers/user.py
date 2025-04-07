@@ -3,14 +3,13 @@ import re
 import secrets
 
 from aiogram import Router, F
+from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import Message, InputFile, FSInputFile, BufferedInputFile, KeyboardButton, ReplyKeyboardMarkup, \
-    InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
-from aiogram.filters import Command, StateFilter
+from aiogram.types import Message, BufferedInputFile, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 
-from database.models import Meme, Group
-from database.utils import create_group, add_user, delete_group, delete_meme, get_memes, get_user_groups
+from database.models import Meme
+from database.utils import create_group, add_user, delete_meme, get_memes, get_user_groups
 
 router = Router()
 
@@ -91,7 +90,6 @@ async def delete_meme_handler(message: Message, state: FSMContext):
         'audio': message.audio
     }
 
-    # Find the first valid file source
     file_source = next(
         (content for content in FILE_SOURCES.values() if content),
         None
