@@ -21,6 +21,8 @@ async def download_video(url: str, unique_file_id: str | int, inline_msg_id):
     subprocess.call([
         YT_DLP_PATH,
         "-o", f"{unique_file_id}.mp4",
+        "-f", "b[filesize<49M]/w",
+        "--force-overwrite",
         url
     ])
 
@@ -69,7 +71,7 @@ async def chosen_inline_result_query(chosen_result: ChosenInlineResult):
     inline_msg_id: str = chosen_result.inline_message_id
     inline_query = chosen_result.query.strip()
 
-    await download_video(url=inline_query, unique_file_id=str(uuid.uuid4()),
+    await download_video(url=inline_query, unique_file_id=str(chosen_result.from_user.id),
                          inline_msg_id=inline_msg_id)
 
 
