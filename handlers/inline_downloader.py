@@ -41,7 +41,7 @@ async def download_video(url: str, unique_file_id: str | int, inline_msg_id):
             media=InputMediaVideo(media=msg_vid.video.file_id),
             inline_message_id=inline_msg_id,
         )
-
+    await os.remove(filename)
 
 @router.inline_query(F.query.contains('https'))
 async def inline_downloader(inline_query: InlineQuery):
