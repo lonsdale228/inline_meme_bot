@@ -18,11 +18,13 @@ async def install_ytdlp():
 
 async def download_video(url: str, unique_file_id: str | int, inline_msg_id):
     YT_DLP_PATH = await os.path.abspath("yt-dlp")
+    YT_DLP_COOKIES = await os.path.abspath("yt-dlp-cookies.txt")
     subprocess.call([
         YT_DLP_PATH,
         "-o", f"{unique_file_id}.mp4",
         "-f", "b[filesize<49M]/w",
         "--force-overwrite",
+        "--cookies", YT_DLP_COOKIES,
         url
     ])
 
