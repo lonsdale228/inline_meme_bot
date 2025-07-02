@@ -25,6 +25,7 @@ async def download_video(url: str, unique_file_id: str | int, inline_msg_id):
         "-f", "b[filesize<49M]/w",
         "--force-overwrite",
         "--cookies", YT_DLP_COOKIES,
+        "--postprocessor-args", "-movflags +faststart",
         url
     ])
 
