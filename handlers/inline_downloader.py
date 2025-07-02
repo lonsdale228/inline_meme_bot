@@ -1,11 +1,10 @@
 import uuid
-from mailbox import Message
 
 from aiofiles import os
 from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent, FSInputFile, InputMediaVideo, \
-    ChosenInlineResult, InlineKeyboardMarkup, InlineKeyboardButton
+    ChosenInlineResult, InlineKeyboardMarkup, InlineKeyboardButton, Message
 from loader import bot, logger
 import subprocess
 
@@ -53,11 +52,11 @@ async def inline_downloader(inline_query: InlineQuery):
             id=str(inline_query.id),
             title='Click here to download video!',
             input_message_content=InputTextMessageContent(
-                message_text="Wait..."
+                message_text="Downloading..."
             ),
             reply_markup=InlineKeyboardMarkup(
                 inline_keyboard=[
-                    [InlineKeyboardButton(text="Please wait...", callback_data=str(uuid.uuid4()))]
+                    [InlineKeyboardButton(text="Downloading...", callback_data=str(uuid.uuid4()))]
                 ])
         )
     ]
@@ -85,3 +84,4 @@ async def update_handler(message: Message):
         YT_DLP_PATH,
         "--update-to", "nightly"
     ])
+    await message.answer("Started updating yt-dlp...")
