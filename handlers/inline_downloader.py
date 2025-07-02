@@ -10,11 +10,6 @@ import subprocess
 
 router = Router()
 
-
-async def install_ytdlp():
-    ...
-
-
 async def download_video(url: str, unique_file_id: str | int, inline_msg_id):
     YT_DLP_PATH = await os.path.abspath("yt-dlp")
     YT_DLP_COOKIES = await os.path.abspath("yt-dlp-cookies.txt")
@@ -80,8 +75,10 @@ async def chosen_inline_result_query(chosen_result: ChosenInlineResult):
 @router.message(Command('update'))
 async def update_handler(message: Message):
     YT_DLP_PATH = await os.path.abspath("yt-dlp")
+    await message.answer("Started updating yt-dlp...")
     subprocess.call([
         YT_DLP_PATH,
         "--update-to", "nightly"
     ])
-    await message.answer("Started updating yt-dlp...")
+    await message.answer("Updating finished!")
+
