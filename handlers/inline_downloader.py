@@ -10,12 +10,26 @@ import subprocess
 
 router = Router()
 
-async def download_video(url: str, unique_file_id: str | int, inline_msg_id):
+async def dl_video_task(url: str, unique_file_id: str | int):
     YT_DLP_PATH = await os.path.abspath("yt-dlp")
     YT_DLP_COOKIES = await os.path.abspath("yt-dlp-cookies.txt")
     subprocess.call([
         YT_DLP_PATH,
         "-o", f"{unique_file_id}.mp4",
+        "-f", "b[filesize<49M]/w",
+        "--force-overwrite",
+        "--cookies", YT_DLP_COOKIES,
+        "--postprocessor-args", "-movflags +faststart",
+        url
+    ])
+
+
+async def download_video(url: str, unique_file_id: str | int, inline_msg_id, file_format: str | None = None):
+    YT_DLP_PATH = await os.path.abspath("yt-dlp")
+    YT_DLP_COOKIES = await os.path.abspath("yt-dlp-cookies.txt")
+    subprocess.call([
+        YT_DLP_PATH,
+        "-o", f"{unique_file_id}.{file_format or 'mp4'}",
         "-f", "b[filesize<49M]/w",
         "--force-overwrite",
         "--cookies", YT_DLP_COOKIES,
@@ -66,10 +80,10 @@ async def inline_downloader(inline_query: InlineQuery):
 @router.chosen_inline_result()
 async def chosen_inline_result_query(chosen_result: ChosenInlineResult):
     inline_msg_id: str = chosen_result.inline_message_id
-    inline_query = chosen_result.query.strip()
+    url, sep, file_format = chosen_result.query.strip().partition(" ")
 
-    await download_video(url=inline_query, unique_file_id=str(chosen_result.from_user.id),
-                         inline_msg_id=inline_msg_id)
+    await download_video(url=url, unique_file_id=str(chosen_result.from_user.id),
+                         inline_msg_id=inline_msg_id, file_format=file_format or None)
 
 
 @router.message(Command('update'))
