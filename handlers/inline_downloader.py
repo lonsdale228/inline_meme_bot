@@ -27,9 +27,10 @@ async def dl_video_task(url: str, unique_file_id: str | int):
 async def download_video(url: str, unique_file_id: str | int, inline_msg_id, file_format: str | None = None):
     YT_DLP_PATH = await os.path.abspath("yt-dlp")
     YT_DLP_COOKIES = await os.path.abspath("yt-dlp-cookies.txt")
+    file_extension = file_format or 'mp4'
     subprocess.call([
         YT_DLP_PATH,
-        "-o", f"{unique_file_id}.{file_format or 'mp4'}",
+        "-o", f"{unique_file_id}.{file_extension}",
         "-f", "b[filesize<49M]/w",
         "--force-overwrite",
         "--no-playlist",
@@ -38,7 +39,7 @@ async def download_video(url: str, unique_file_id: str | int, inline_msg_id, fil
         url
     ])
 
-    filename = await os.path.abspath(f"{unique_file_id}.mp4")
+    filename = await os.path.abspath(f"{unique_file_id}.{file_extension}")
     logger.info(f"File path: {filename}")
     if await os.path.exists(filename):
 
