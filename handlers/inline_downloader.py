@@ -20,16 +20,21 @@ from aiogram.types import (
 from loader import bot, logger
 import subprocess
 
+from utils.time_parsing import parse_text
+
 router = Router()
 
 
-async def dl_video_task(url: str):
+async def dl_video_task(url: str, section):
+
     YT_DLP_PATH = await os.path.abspath("yt-dlp")
     YT_DLP_COOKIES = await os.path.abspath("yt-dlp-cookies.txt")
     temp_name = secrets.token_hex(4)
     subprocess.call(
         [
             YT_DLP_PATH,
+            "--download-sections", section,
+            "--force-keyframes-at-cuts",
             "-o",
             f"{temp_name}.mp4",
             "-f",
@@ -116,9 +121,18 @@ class GetMemeName(StatesGroup):
 
 @router.message(F.text.contains("https"), StateFilter("*"))
 async def message_downloader(message: Message, state: FSMContext):
-    url = message.text.strip()
+    text = message.text
 
-    filename = await dl_video_task(url)
+    parsed_list = parse_text(text)
+    if not parsed_list:
+        raise ValueError("No downloadable items found in text")
+
+    p = parsed_list[0]
+
+    url     = p["url"]
+    section = p["section"]
+
+    filename = await dl_video_task(url, section)
 
     video_file = FSInputFile(filename + ".mp4")
     video_msg = await message.answer_video(video_file, caption="Enter meme keywords!")
