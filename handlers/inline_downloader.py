@@ -131,9 +131,10 @@ async def message_downloader(message: Message, state: FSMContext):
 
     url     = p["url"]
     section = p["section"]
-
+    logger.info(f"Downloading meme from {url} with section {section}")
     filename = await dl_video_task(url, section)
 
+    logger.info(f"Filename: {filename}")
     video_file = FSInputFile(filename + ".mp4")
     video_msg = await message.answer_video(video_file, caption="Enter meme keywords!")
 
