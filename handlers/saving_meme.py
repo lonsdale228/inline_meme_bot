@@ -57,7 +57,6 @@ async def meme_handler(message: Message, state: FSMContext):
         return
     elif message.text:
         await send_msg("video")
-        await state.clear()
         return
     else:
         await message.answer("Wrong file type!")
