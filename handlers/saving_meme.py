@@ -7,6 +7,7 @@ from aiogram.types import Message
 from database.utils import add_meme, get_user_groups
 from filters.chat_type import ChatTypeFilter
 from handlers.add_to_groups import AddToGroup, add_meme_to_group
+from handlers.inline_downloader import GetMemeName
 
 router = Router()
 router.message.filter(ChatTypeFilter(chat_type=["sender", "private"]))
@@ -15,7 +16,7 @@ class NameMeme(StatesGroup):
     naming_meme = State()
 
 
-
+@router.message(F.text, StateFilter(GetMemeName.meme_name))
 @router.message(F.photo, StateFilter(None))
 @router.message(F.audio, StateFilter(None))
 @router.message(F.video, StateFilter(None))
@@ -53,6 +54,10 @@ async def meme_handler(message: Message, state: FSMContext):
         await state.update_data(meme_file_id=message.audio.file_id)
         await state.update_data(meme_unique_file_id=message.audio.file_unique_id)
         await send_msg("audio")
+        return
+    elif message.text:
+        await send_msg("video")
+        await state.clear()
         return
     else:
         await message.answer("Wrong file type!")
