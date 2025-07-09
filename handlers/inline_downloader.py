@@ -1,3 +1,4 @@
+import secrets
 import uuid
 
 from aiofiles import os
@@ -10,19 +11,20 @@ import subprocess
 
 router = Router()
 
-async def dl_video_task(url: str, unique_file_id: str | int):
+async def dl_video_task(url: str):
     YT_DLP_PATH = await os.path.abspath("yt-dlp")
     YT_DLP_COOKIES = await os.path.abspath("yt-dlp-cookies.txt")
+    temp_name = secrets.token_hex(4)
     subprocess.call([
         YT_DLP_PATH,
-        "-o", f"{unique_file_id}.mp4",
+        "-o", f"{temp_name}.mp4",
         "-f", "b[filesize<49M]/w",
         "--force-overwrite",
         "--cookies", YT_DLP_COOKIES,
         "--postprocessor-args", "-movflags +faststart",
         url
     ])
-
+    return temp_name
 
 async def download_video(url: str, unique_file_id: str | int, inline_msg_id, file_format: str | None = None):
     YT_DLP_PATH = await os.path.abspath("yt-dlp")
@@ -83,6 +85,14 @@ async def inline_downloader(inline_query: InlineQuery):
         is_personal=True
     )
 
+@router.message(F.text.contains('https'))
+async def message_downloader(message: Message):
+    url = message.text.strip()
+
+    filename = await dl_video_task(url)
+
+    video_file = FSInputFile(filename+".mp4")
+    await message.answer_video(video_file)
 
 @router.chosen_inline_result()
 async def chosen_inline_result_query(chosen_result: ChosenInlineResult):
