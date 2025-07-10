@@ -8,24 +8,27 @@ __all__ = [
     "parse_text",
 ]
 
+
 class Parsed(TypedDict):
     url: str
-    start: int        # seconds
-    end: int          # seconds
-    length: int       # seconds
-    start_hms: str    # HH:MM:SS
-    end_hms: str      # HH:MM:SS
-    section: str      # *HH:MM:SS-HH:MM:SS
+    start: int  # seconds
+    end: int  # seconds
+    length: int  # seconds
+    start_hms: str  # HH:MM:SS
+    end_hms: str  # HH:MM:SS
+    section: str  # *HH:MM:SS-HH:MM:SS
+
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Parsing helpers
 # ────────────────────────────────────────────────────────────────────────────────
 
 _TIME_RE = re.compile(
-    r"^(?:(?P<hours>\d+)h)?"      # hours optional
-    r"(?:(?P<minutes>\d+)m)?"    # minutes optional
-    r"(?:(?P<seconds>\d+)s)?$"   # seconds optional
+    r"^(?:(?P<hours>\d+)h)?"  # hours optional
+    r"(?:(?P<minutes>\d+)m)?"  # minutes optional
+    r"(?:(?P<seconds>\d+)s)?$"  # seconds optional
 )
+
 
 def _parse_time(value: str) -> int:
     """Convert a compact time spec like ``"1h2m3s"`` into seconds."""
@@ -37,11 +40,13 @@ def _parse_time(value: str) -> int:
     s = int(m.group("seconds") or 0)
     return h * 3600 + m_ * 60 + s
 
+
 def _sec_to_hhmmss(total: int) -> str:
     """Return *total* seconds as ``HH:MM:SS`` with leading zeros."""
     h, rem = divmod(total, 3600)
     m, s = divmod(rem, 60)
     return f"{h:02d}:{m:02d}:{s:02d}"
+
 
 def parse_line(line: str) -> Parsed:
     """Parse a single *line* and return a rich :class:`Parsed` mapping."""
@@ -69,8 +74,8 @@ def parse_line(line: str) -> Parsed:
         end = start + length  # type: ignore[operator]
 
     start_hms = _sec_to_hhmmss(start)
-    end_hms   = _sec_to_hhmmss(end)
-    section   = f"*{start_hms}-{end_hms}"
+    end_hms = _sec_to_hhmmss(end)
+    section = f"*{start_hms}-{end_hms}"
 
     return {
         "url": url,
@@ -82,9 +87,11 @@ def parse_line(line: str) -> Parsed:
         "section": section,
     }
 
+
 def parse_text(text: str) -> List[Parsed]:
     """Parse every non‑blank line of *text* into :class:`Parsed` mappings."""
     return [parse_line(l) for l in text.splitlines() if l.strip()]
+
 
 if __name__ == "__main__":  # simple demo when run directly
     sample = """

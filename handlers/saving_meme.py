@@ -12,6 +12,7 @@ from handlers.inline_downloader import GetMemeName
 router = Router()
 router.message.filter(ChatTypeFilter(chat_type=["sender", "private"]))
 
+
 class NameMeme(StatesGroup):
     naming_meme = State()
 
@@ -24,11 +25,11 @@ class NameMeme(StatesGroup):
 @router.message(F.animation, StateFilter(None))
 async def meme_handler(message: Message, state: FSMContext):
     await message.answer(str(message.chat.id))
+
     async def send_msg(mime_type):
         await state.update_data(mime_type=mime_type)
         await message.answer("Enter meme name/keywords for future searching!")
         await state.set_state(NameMeme.naming_meme)
-
 
     if message.sticker:
         await state.update_data(meme_file_id=message.sticker.file_id)
@@ -62,22 +63,26 @@ async def meme_handler(message: Message, state: FSMContext):
         await message.answer("Wrong file type!")
         return
 
-@router.message(
-    F.text,
-    StateFilter(NameMeme.naming_meme)
-)
+
+@router.message(F.text, StateFilter(NameMeme.naming_meme))
 async def add_uni_meme(message: Message, state: FSMContext):
     meme_name = message.text.strip()
     data = await state.get_data()
 
-    meme_id = await add_meme(title=meme_name, description="", mime_type=data["mime_type"], file_id=data['meme_file_id'],
-                             is_private=True,
-                             user_id=str(message.from_user.id), file_unique_id=data['meme_unique_file_id'])
+    meme_id = await add_meme(
+        title=meme_name,
+        description="",
+        mime_type=data["mime_type"],
+        file_id=data["meme_file_id"],
+        is_private=True,
+        user_id=str(message.from_user.id),
+        file_unique_id=data["meme_unique_file_id"],
+    )
 
     if meme_id != -1:
         await state.set_state(AddToGroup.add_meme_to_group)
 
-        if len(await get_user_groups(str(message.from_user.id)))!=0:
+        if len(await get_user_groups(str(message.from_user.id))) != 0:
             await add_meme_to_group(message=message, state=state, meme_id=meme_id)
             # await state.clear()
         else:

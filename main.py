@@ -13,12 +13,15 @@ from database.models import Base
 import loader
 
 
-
 dp = Dispatcher()
-dp.include_routers(inline_downloader, inline_router,start_router,saving_meme_router,user_router,add_to_groups_router)
-
-
-
+dp.include_routers(
+    inline_downloader,
+    inline_router,
+    start_router,
+    saving_meme_router,
+    user_router,
+    add_to_groups_router,
+)
 
 
 async def main():
@@ -28,6 +31,5 @@ async def main():
     await dp.start_polling(loader.bot)
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

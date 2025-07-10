@@ -27,7 +27,8 @@ Also you can create groups, to share meme with your friends,
 and only to your friends.
 """
 
-@router.message(Command("start"), StateFilter(None))
+
+@router.message(Command("start"), StateFilter("*"))
 async def start(message: Message, state: FSMContext):
     await state.clear()
     msg_text = message.text
@@ -38,5 +39,4 @@ async def start(message: Message, state: FSMContext):
         await add_user_to_group(str(message.from_user.id), referral)
         await message.answer(f"You have been added to group!")
     else:
-        await message.answer(f"Hello! \n" +
-                             guide)
+        await message.answer(f"Hello! \n" + guide)

@@ -9,16 +9,31 @@ from database.models import Meme, User, Group, UserGroup, GroupMeme
 from loader import logger
 
 
-async def add_meme(title: str, description: str, file_id: str, file_unique_id:str, mime_type: str, user_id: str, is_private: bool = False) -> int:
+async def add_meme(
+    title: str,
+    description: str,
+    file_id: str,
+    file_unique_id: str,
+    mime_type: str,
+    user_id: str,
+    is_private: bool = False,
+) -> int:
     try:
         session: AsyncSession
         async for session in get_session():
             try:
-                await add_user(user_id,False)
+                await add_user(user_id, False)
             except Exception as e:
                 ...
 
-            meme = Meme(name=title, file_id=file_id,file_unique_id=file_unique_id, mime_type=mime_type, user_tg_id=user_id, is_public=(not is_private))
+            meme = Meme(
+                name=title,
+                file_id=file_id,
+                file_unique_id=file_unique_id,
+                mime_type=mime_type,
+                user_tg_id=user_id,
+                is_public=(not is_private),
+            )
             session.add(meme)
             await session.flush()
             meme_id: int = meme.id
@@ -51,8 +66,8 @@ async def add_meme(title: str, description: str, file_id: str, file_unique_id:st
 #         result = await session.execute(query)
 #         return result.scalars().all()
 
-async def get_memes(search_text: str, media_type: str, user_id: str):
 
+async def get_memes(search_text: str, media_type: str, user_id: str):
     words = [word.strip() for word in search_text.split() if word.strip()]
 
     async for session in get_session():
@@ -64,20 +79,31 @@ async def get_memes(search_text: str, media_type: str, user_id: str):
             .join(UserGroup, UserGroup.group_id == Group.id, isouter=True)
             .where(
                 or_(
-                   (
-                            (UserGroup.user_id == user_id) &
-                            ((Meme.mime_type == media_type) if media_type != "*" else True) &
-                            and_(*[Meme.name.ilike(f"%{word}%") for word in words]) if search_text!="*" else True
+                    (
+                        (UserGroup.user_id == user_id)
+                        & (
+                            (Meme.mime_type == media_type)
+                            if media_type != "*"
+                            else True
+                        )
+                        & and_(*[Meme.name.ilike(f"%{word}%") for word in words])
+                        if search_text != "*"
+                        else True
                     ),
                     (
-                            (Meme.user_tg_id == user_id) &
-                            ((Meme.mime_type == media_type) if media_type != "*" else True) &
-                            and_(*[Meme.name.ilike(f"%{word}%") for word in words]) if search_text!="*" else True
-                    )
+                        (Meme.user_tg_id == user_id)
+                        & (
+                            (Meme.mime_type == media_type)
+                            if media_type != "*"
+                            else True
+                        )
+                        & and_(*[Meme.name.ilike(f"%{word}%") for word in words])
+                        if search_text != "*"
+                        else True
+                    ),
                 )
             )
         )
-
 
         result = await session.execute(query)
         return result.scalars().all()
@@ -100,7 +126,6 @@ async def get_users():
         return result.scalars().all()
 
 
-
 async def create_group(user_id: str, group_name: str, token: str) -> bool:
     try:
         async for session in get_session():
@@ -119,11 +144,14 @@ async def create_group(user_id: str, group_name: str, token: str) -> bool:
 
 async def add_user_to_group(user_id: str, invite_link_id: str):
     async for session in get_session():
-        result = await session.execute(select(Group).where(Group.invite_link_id == invite_link_id))
+        result = await session.execute(
+            select(Group).where(Group.invite_link_id == invite_link_id)
+        )
         group: Group = result.scalars().first()
 
         session.add(UserGroup(user_id=user_id, group_id=group.id))
         await session.commit()
+
 
 async def add_meme_to_all_user_groups(user_id: str, meme_id: int):
     async for session in get_session():
@@ -134,11 +162,14 @@ async def add_meme_to_all_user_groups(user_id: str, meme_id: int):
 
         await session.commit()
 
+
 async def get_user_groups(user_id: str) -> list[Group]:
     async for session in get_session():
-        result = await session.execute(select(Group)
-                                       .join(UserGroup, Group.id == UserGroup.group_id)
-                                       .where(UserGroup.user_id == user_id))
+        result = await session.execute(
+            select(Group)
+            .join(UserGroup, Group.id == UserGroup.group_id)
+            .where(UserGroup.user_id == user_id)
+        )
         return result.scalars().all()
 
 
@@ -149,6 +180,7 @@ async def send_meme_to_selected_group(groups_id: list[int], meme_id: int):
 
         await session.commit()
 
+
 async def send_meme_to_all(user_id: str, meme_id: int):
     async for session in get_session():
         user_groups = await get_user_groups(user_id)
@@ -157,18 +189,25 @@ async def send_meme_to_all(user_id: str, meme_id: int):
 
         await session.commit()
 
+
 async def delete_group(group_id: int, user_id: str) -> bool:
     admin_groups = await get_group_admin(group_id, user_id)
     if admin_groups:
         async for session in get_session():
-            res = await session.execute(select(Meme)
-                                          .join(GroupMeme, Meme.id == GroupMeme.meme_id)
-                                          .where(GroupMeme.group_id == group_id))
+            res = await session.execute(
+                select(Meme)
+                .join(GroupMeme, Meme.id == GroupMeme.meme_id)
+                .where(GroupMeme.group_id == group_id)
+            )
 
             memes: tuple[Meme] = res.scalars().all()
 
-            await session.execute(delete(GroupMeme).where(GroupMeme.group_id == group_id))
-            await session.execute(delete(UserGroup).where(UserGroup.group_id == group_id))
+            await session.execute(
+                delete(GroupMeme).where(GroupMeme.group_id == group_id)
+            )
+            await session.execute(
+                delete(UserGroup).where(UserGroup.group_id == group_id)
+            )
             await session.execute(delete(Group).where(Group.id == group_id))
 
             for memasik in memes:
@@ -178,9 +217,12 @@ async def delete_group(group_id: int, user_id: str) -> bool:
     else:
         return False
 
+
 async def delete_meme(meme_unique_file_id: str, user_id: str) -> bool:
     async for session in get_session():
-        result = await session.execute(select(Meme).where(Meme.file_unique_id == meme_unique_file_id))
+        result = await session.execute(
+            select(Meme).where(Meme.file_unique_id == meme_unique_file_id)
+        )
 
         meme: Meme = result.scalars().first()
 
@@ -190,6 +232,7 @@ async def delete_meme(meme_unique_file_id: str, user_id: str) -> bool:
             return True
         else:
             return False
+
 
 async def get_group_admin(group_id: int, user_id: str):
     async for session in get_session():

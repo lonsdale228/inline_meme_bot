@@ -2,10 +2,16 @@ import contextlib
 import os
 from typing import Any, AsyncIterator
 
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession, async_scoped_session, \
-    AsyncConnection
+from sqlalchemy.ext.asyncio import (
+    create_async_engine,
+    async_sessionmaker,
+    AsyncSession,
+    async_scoped_session,
+    AsyncConnection,
+)
 
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+
 
 class DatabaseSessionManager:
     def __init__(self, host: str, engine_kwargs: dict[str, Any] = {}):

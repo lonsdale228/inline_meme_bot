@@ -26,14 +26,14 @@ router = Router()
 
 
 async def dl_video_task(url: str, section):
-
     YT_DLP_PATH = await os.path.abspath("yt-dlp")
     YT_DLP_COOKIES = await os.path.abspath("yt-dlp-cookies.txt")
     temp_name = secrets.token_hex(4)
     subprocess.call(
         [
             YT_DLP_PATH,
-            "--download-sections", section,
+            "--download-sections",
+            section,
             "--force-keyframes-at-cuts",
             "-o",
             f"{temp_name}.mp4",
@@ -129,7 +129,7 @@ async def message_downloader(message: Message, state: FSMContext):
 
     p = parsed_list[0]
 
-    url     = p["url"]
+    url = p["url"]
     section = p["section"]
     logger.info(f"Downloading meme from {url} with section {section}")
     filename = await dl_video_task(url, section)
@@ -143,11 +143,11 @@ async def message_downloader(message: Message, state: FSMContext):
 
     await state.set_state(GetMemeName.meme_name)
 
+
 # @router.message(F.text, StateFilter(GetMemeName.meme_name))
 # async def get_meme_name_handler(message: Message, state: FSMContext):
 #     data = await state.get_data()
 #     meme_name = message.text.strip()
-
 
 
 @router.chosen_inline_result()
