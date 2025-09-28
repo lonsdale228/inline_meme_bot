@@ -42,8 +42,8 @@ async def dl_video_task(url: str, section):
             "--force-overwrite",
             "--cookies",
             YT_DLP_COOKIES,
-            "--postprocessor-args",
-            "-movflags +faststart",
+            # "--postprocessor-args",
+            # "-movflags +faststart",
             url,
         ]
     )
@@ -66,8 +66,8 @@ async def download_video(
         "--no-playlist",
         "--cookies",
         YT_DLP_COOKIES,
-        "--postprocessor-args",
-        "-movflags +faststart",
+        # "--postprocessor-args",
+        # "-movflags +faststart",
         url,
     ]
 
