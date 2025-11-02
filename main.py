@@ -11,7 +11,7 @@ from handlers.inline_downloader import router as inline_downloader
 from database.connection import sessionmanager
 from database.models import Base
 import loader
-
+from scheduler import setup_scheduler
 
 dp = Dispatcher()
 dp.include_routers(
@@ -28,6 +28,7 @@ async def main():
     async with sessionmanager.connect() as connection:
         await connection.run_sync(Base.registry.configure)
         await connection.run_sync(Base.metadata.create_all)
+    await setup_scheduler()
     await dp.start_polling(loader.bot)
 
 

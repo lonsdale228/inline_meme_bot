@@ -18,9 +18,10 @@ from aiogram.types import (
     Message,
 )
 from loader import bot, logger
-import subprocess
+from asyncio import subprocess
 
 from utils.time_parsing import parse_text
+from utils.yt_dlp_utils import update_ytdlp
 
 router = Router()
 
@@ -29,23 +30,21 @@ async def dl_video_task(url: str, section):
     YT_DLP_PATH = await os.path.abspath("yt-dlp")
     YT_DLP_COOKIES = await os.path.abspath("yt-dlp-cookies.txt")
     temp_name = secrets.token_hex(4)
-    subprocess.call(
-        [
-            YT_DLP_PATH,
-            "--download-sections",
-            section,
-            "--force-keyframes-at-cuts",
-            "-o",
-            f"{temp_name}.mp4",
-            "-f",
-            "b[filesize<49M]/best",
-            "--force-overwrite",
-            "--cookies",
-            YT_DLP_COOKIES,
-            # "--postprocessor-args",
-            # "-movflags +faststart",
-            url,
-        ]
+    await subprocess.create_subprocess_exec(
+        YT_DLP_PATH,
+        "--download-sections",
+        section,
+        "--force-keyframes-at-cuts",
+        "-o",
+        f"{temp_name}.mp4",
+        "-f",
+        "b[filesize<49M]/best",
+        "--force-overwrite",
+        "--cookies",
+        YT_DLP_COOKIES,
+        # "--postprocessor-args",
+        # "-movflags +faststart",
+        url,
     )
     return temp_name
 
@@ -74,7 +73,7 @@ async def download_video(
     if file_format:
         cmd.extend(["--audio-format", file_format])
 
-    subprocess.call(cmd)
+    await subprocess.create_subprocess_exec(*cmd)
 
     filename = await os.path.abspath(f"{unique_file_id}.{file_extension}")
     logger.info(f"File path: {filename}")
@@ -165,8 +164,8 @@ async def chosen_inline_result_query(chosen_result: ChosenInlineResult):
 
 @router.message(Command("update"))
 async def update_handler(message: Message):
-    YT_DLP_PATH = await os.path.abspath("yt-dlp")
+
     await message.answer("Started updating yt-dlp...")
-    subprocess.call([YT_DLP_PATH, "--update-to", "nightly"])
+    await update_ytdlp()
     await message.answer("Updating finished!")
 
