@@ -17,7 +17,6 @@ class NameMeme(StatesGroup):
     naming_meme = State()
 
 
-@router.message(F.text, StateFilter(GetMemeName.meme_name))
 @router.message(F.photo, StateFilter(None))
 @router.message(F.audio, StateFilter(None))
 @router.message(F.video, StateFilter(None))
@@ -64,6 +63,7 @@ async def meme_handler(message: Message, state: FSMContext):
         return
 
 
+@router.message(F.text, StateFilter(GetMemeName.meme_name))
 @router.message(F.text, StateFilter(NameMeme.naming_meme))
 async def add_uni_meme(message: Message, state: FSMContext):
     meme_name = message.text.strip()
