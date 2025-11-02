@@ -30,7 +30,7 @@ async def dl_video_task(url: str, section):
     YT_DLP_PATH = await os.path.abspath("yt-dlp")
     YT_DLP_COOKIES = await os.path.abspath("yt-dlp-cookies.txt")
     temp_name = secrets.token_hex(4)
-    await subprocess.create_subprocess_exec(
+    task = await subprocess.create_subprocess_exec(
         YT_DLP_PATH,
         "--download-sections",
         section,
@@ -46,6 +46,8 @@ async def dl_video_task(url: str, section):
         # "-movflags +faststart",
         url,
     )
+    returncode = await task.wait()
+    logger.info(f"Return code: {returncode}")
     return temp_name
 
 
@@ -73,7 +75,10 @@ async def download_video(
     if file_format:
         cmd.extend(["--audio-format", file_format])
 
-    await subprocess.create_subprocess_exec(*cmd)
+    task = await subprocess.create_subprocess_exec(*cmd)
+
+    returncode = await task.wait()
+    logger.info(f"Return code: {returncode}")
 
     filename = await os.path.abspath(f"{unique_file_id}.{file_extension}")
     logger.info(f"File path: {filename}")
