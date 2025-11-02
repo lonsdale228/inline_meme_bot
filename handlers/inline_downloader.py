@@ -40,6 +40,7 @@ async def dl_video_task(url: str, section):
             "-f",
             "b[filesize<49M]/best",
             "--force-overwrite",
+            "--no-sleep-requests",
             "--cookies",
             YT_DLP_COOKIES,
             # "--postprocessor-args",
