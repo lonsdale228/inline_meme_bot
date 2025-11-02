@@ -1,4 +1,5 @@
 import secrets
+from typing import Any, Coroutine
 
 import sqlalchemy
 from sqlalchemy import select, Boolean, bindparam, delete, distinct, text, or_, and_
@@ -17,7 +18,7 @@ async def add_meme(
     mime_type: str,
     user_id: str,
     is_private: bool = False,
-) -> int:
+) -> int | None:
     try:
         session: AsyncSession
         async for session in get_session():
