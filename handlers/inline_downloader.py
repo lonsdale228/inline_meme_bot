@@ -64,6 +64,7 @@ async def download_video(
         "b[filesize<49M]/best",
         "--force-overwrite",
         "--no-playlist",
+        "--no-sleep-requests",
         "--cookies",
         YT_DLP_COOKIES,
         # "--postprocessor-args",
