@@ -72,7 +72,7 @@ async def add_uni_meme(message: Message, state: FSMContext):
     meme_id = await add_meme(
         title=meme_name,
         description="",
-        mime_type=data["mime_type"],
+        mime_type=data.get("mime_type", "video"),
         file_id=data["meme_file_id"],
         is_private=True,
         user_id=str(message.from_user.id),
