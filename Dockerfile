@@ -8,6 +8,9 @@ RUN apt-get update \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
+RUN curl -fsSL https://deno.land/install.sh | sh \
+ && mv /root/.deno/bin/deno /usr/local/bin/deno \
+
 COPY requirements.txt /app/requirements.txt
 
 RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
