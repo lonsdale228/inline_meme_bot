@@ -9,7 +9,7 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 RUN curl -fsSL https://deno.land/install.sh | sh \
- && mv /root/.deno/bin/deno /usr/local/bin/deno \
+ && mv /root/.deno/bin/deno /usr/local/bin/deno
 
 COPY requirements.txt /app/requirements.txt
 
