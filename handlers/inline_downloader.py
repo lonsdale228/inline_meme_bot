@@ -61,45 +61,40 @@ async def download_video(
     YT_DLP_COOKIES = await os.path.abspath("yt-dlp-cookies.txt")
 
     is_audio = file_format is not None
-    output_ext = file_format if is_audio else "mp4"
-
-    output_template = f"{unique_file_id}.%(ext)s"
 
     cmd = [
         YT_DLP_PATH,
         "-o",
-        output_template,
+        f"{unique_file_id}.%(ext)s",
         "--force-overwrite",
         "--no-playlist",
         "--cookies",
         YT_DLP_COOKIES,
-        url,
     ]
 
     if is_audio:
-        cmd.extend(
-            [
-                "-f",
-                "bestaudio",
-                "-x",  # extract audio
-                "--audio-format",
-                file_format,  # mp3
-            ]
-        )
+        cmd += [
+            "-f",
+            "bestaudio",
+            "-x",
+            "--audio-format",
+            file_format,   # mp3
+        ]
     else:
-        cmd.extend(
-            [
-                "-f",
-                "b[filesize<49M]/best",
-            ]
-        )
+        cmd += [
+            "-f",
+            "b[filesize<49M]/best",
+        ]
+
+    cmd.append(url)
+
+    logger.info(cmd)
 
     task = await subprocess.create_subprocess_exec(*cmd)
+    await task.wait()
 
-    returncode = await task.wait()
-    logger.info(f"Return code: {returncode}")
-
-    filename = await os.path.abspath(f"{unique_file_id}.{output_ext}")
+    final_ext = file_format if is_audio else "mp4"
+    filename = await os.path.abspath(f"{unique_file_id}.{final_ext}")
     logger.info(f"File path: {filename}")
 
     if await os.path.exists(filename):
