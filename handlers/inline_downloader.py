@@ -52,47 +52,77 @@ async def dl_video_task(url: str, section):
 
 
 async def download_video(
-    url: str, unique_file_id: str | int, inline_msg_id, file_format: str | None = None
+    url: str,
+    unique_file_id: str | int,
+    inline_msg_id,
+    file_format: str | None = None,
 ):
     YT_DLP_PATH = await os.path.abspath("yt-dlp")
     YT_DLP_COOKIES = await os.path.abspath("yt-dlp-cookies.txt")
-    file_extension = file_format or "mp4"
+
+    is_audio = file_format is not None
+    output_ext = file_format if is_audio else "mp4"
+
+    output_template = f"{unique_file_id}.%(ext)s"
+
     cmd = [
         YT_DLP_PATH,
         "-o",
-        f"{unique_file_id}.{file_extension}",
-        "-f",
-        "b[filesize<49M]/best",
+        output_template,
         "--force-overwrite",
         "--no-playlist",
         "--cookies",
         YT_DLP_COOKIES,
-        # "--postprocessor-args",
-        # "-movflags +faststart",
         url,
     ]
 
-    if file_format:
-        cmd.extend(["--audio-format", file_format])
+    if is_audio:
+        cmd.extend(
+            [
+                "-f",
+                "bestaudio",
+                "-x",  # extract audio
+                "--audio-format",
+                file_format,  # mp3
+            ]
+        )
+    else:
+        cmd.extend(
+            [
+                "-f",
+                "b[filesize<49M]/best",
+            ]
+        )
 
     task = await subprocess.create_subprocess_exec(*cmd)
 
     returncode = await task.wait()
     logger.info(f"Return code: {returncode}")
 
-    filename = await os.path.abspath(f"{unique_file_id}.{file_extension}")
+    filename = await os.path.abspath(f"{unique_file_id}.{output_ext}")
     logger.info(f"File path: {filename}")
+
     if await os.path.exists(filename):
-        video = FSInputFile(path=filename)
+        try:
+            video = FSInputFile(path=filename)
 
-        msg_vid = await bot.send_video(chat_id=-4601538575, video=video)
+            msg_vid = await bot.send_video(
+                chat_id=-4601538575,
+                video=video,
+            )
 
-        logger.info(f"Inline msg id: {inline_msg_id}")
-        await bot.edit_message_media(
-            media=InputMediaVideo(media=msg_vid.video.file_id),
-            inline_message_id=inline_msg_id,
-        )
-        await os.remove(filename)
+            logger.info(f"Inline msg id: {inline_msg_id}")
+
+            await bot.edit_message_media(
+                media=InputMediaVideo(media=msg_vid.video.file_id),
+                inline_message_id=inline_msg_id,
+            )
+
+        except Exception as e:
+            logger.error(e, exc_info=True)
+
+        finally:
+            await os.remove(filename)
 
 
 @router.inline_query(F.query.contains("https"))
