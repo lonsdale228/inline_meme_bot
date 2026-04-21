@@ -1,3 +1,4 @@
+import json
 import secrets
 import uuid
 
@@ -27,6 +28,31 @@ from utils.yt_dlp_utils import update_ytdlp
 router = Router()
 
 AUDIO_FORMATS = {"mp3", "m4a", "opus", "aac", "flac", "wav", "vorbis"}
+
+
+async def fetch_metadata(url: str, cookies_path: str, yt_dlp_path: str):
+    try:
+        task = await subprocess.create_subprocess_exec(
+            yt_dlp_path,
+            "--no-playlist",
+            "--cookies",
+            cookies_path,
+            "-J",
+            url,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        stdout, _ = await task.communicate()
+        if task.returncode != 0 or not stdout:
+            return None, None
+
+        info = json.loads(stdout)
+        title = info.get("track") or info.get("title")
+        performer = info.get("artist") or info.get("uploader")
+        return title, performer
+    except Exception as e:
+        logger.warning(f"Could not fetch metadata: {e}")
+        return None, None
 
 
 async def dl_video_task(url: str, section):
@@ -82,6 +108,7 @@ async def download_video(
             "-x",
             "--audio-format",
             file_format,
+            "--add-metadata",
         ]
         final_ext = file_format
     else:
@@ -111,13 +138,22 @@ async def download_video(
         input_file = FSInputFile(path=filename)
 
         if is_audio:
+            title, performer = await fetch_metadata(url, YT_DLP_COOKIES, YT_DLP_PATH)
+            logger.info(f"Audio metadata: title={title!r}, performer={performer!r}")
+
             msg = await bot.send_audio(
                 chat_id=-4601538575,
                 audio=input_file,
+                title=title,
+                performer=performer,
             )
             logger.info(f"Inline msg id: {inline_msg_id}")
             await bot.edit_message_media(
-                media=InputMediaAudio(media=msg.audio.file_id),
+                media=InputMediaAudio(
+                    media=msg.audio.file_id,
+                    title=title,
+                    performer=performer,
+                ),
                 inline_message_id=inline_msg_id,
             )
         else:
