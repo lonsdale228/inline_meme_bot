@@ -12,6 +12,7 @@ from aiogram.types import (
     InputTextMessageContent,
     FSInputFile,
     InputMediaVideo,
+    InputMediaAudio,
     ChosenInlineResult,
     InlineKeyboardMarkup,
     InlineKeyboardButton,
@@ -24,6 +25,8 @@ from utils.time_parsing import parse_text
 from utils.yt_dlp_utils import update_ytdlp
 
 router = Router()
+
+AUDIO_FORMATS = {"mp3", "m4a", "opus", "aac", "flac", "wav", "vorbis"}
 
 
 async def dl_video_task(url: str, section):
@@ -42,8 +45,6 @@ async def dl_video_task(url: str, section):
         "--force-overwrite",
         "--cookies",
         YT_DLP_COOKIES,
-        # "--postprocessor-args",
-        # "-movflags +faststart",
         url,
     )
     returncode = await task.wait()
@@ -60,12 +61,14 @@ async def download_video(
     YT_DLP_PATH = await os.path.abspath("yt-dlp")
     YT_DLP_COOKIES = await os.path.abspath("yt-dlp-cookies.txt")
 
-    is_audio = file_format is not None
+    is_audio = file_format is not None and file_format.lower() in AUDIO_FORMATS
+
+    output_template = f"{unique_file_id}.%(ext)s"
 
     cmd = [
         YT_DLP_PATH,
         "-o",
-        f"{unique_file_id}.%(ext)s",
+        output_template,
         "--force-overwrite",
         "--no-playlist",
         "--cookies",
@@ -78,45 +81,61 @@ async def download_video(
             "bestaudio",
             "-x",
             "--audio-format",
-            file_format,   # mp3
+            file_format,
         ]
+        final_ext = file_format
     else:
         cmd += [
             "-f",
             "b[filesize<49M]/best",
+            "--remux-video",
+            "mp4",
         ]
+        final_ext = "mp4"
 
     cmd.append(url)
-
     logger.info(cmd)
 
     task = await subprocess.create_subprocess_exec(*cmd)
-    await task.wait()
+    returncode = await task.wait()
+    logger.info(f"yt-dlp return code: {returncode}")
 
-    final_ext = file_format if is_audio else "mp4"
     filename = await os.path.abspath(f"{unique_file_id}.{final_ext}")
     logger.info(f"File path: {filename}")
 
-    if await os.path.exists(filename):
-        try:
-            video = FSInputFile(path=filename)
+    if not await os.path.exists(filename):
+        logger.error(f"Expected output file not found: {filename}")
+        return
 
-            msg_vid = await bot.send_video(
+    try:
+        input_file = FSInputFile(path=filename)
+
+        if is_audio:
+            msg = await bot.send_audio(
                 chat_id=-4601538575,
-                video=video,
+                audio=input_file,
             )
-
             logger.info(f"Inline msg id: {inline_msg_id}")
-
             await bot.edit_message_media(
-                media=InputMediaVideo(media=msg_vid.video.file_id),
+                media=InputMediaAudio(media=msg.audio.file_id),
+                inline_message_id=inline_msg_id,
+            )
+        else:
+            msg = await bot.send_video(
+                chat_id=-4601538575,
+                video=input_file,
+            )
+            logger.info(f"Inline msg id: {inline_msg_id}")
+            await bot.edit_message_media(
+                media=InputMediaVideo(media=msg.video.file_id),
                 inline_message_id=inline_msg_id,
             )
 
-        except Exception as e:
-            logger.error(e, exc_info=True)
+    except Exception as e:
+        logger.error(e, exc_info=True)
 
-        finally:
+    finally:
+        if await os.path.exists(filename):
             await os.remove(filename)
 
 
@@ -173,29 +192,23 @@ async def message_downloader(message: Message, state: FSMContext):
     await state.set_state(GetMemeName.meme_name)
 
 
-# @router.message(F.text, StateFilter(GetMemeName.meme_name))
-# async def get_meme_name_handler(message: Message, state: FSMContext):
-#     data = await state.get_data()
-#     meme_name = message.text.strip()
-
-
 @router.chosen_inline_result()
 async def chosen_inline_result_query(chosen_result: ChosenInlineResult):
     inline_msg_id: str = chosen_result.inline_message_id
     url, sep, file_format = chosen_result.query.strip().partition(" ")
 
+    file_format = file_format.strip().lower() or None
+
     await download_video(
         url=url,
         unique_file_id=str(chosen_result.from_user.id),
         inline_msg_id=inline_msg_id,
-        file_format=file_format or None,
+        file_format=file_format,
     )
 
 
 @router.message(Command("update"))
 async def update_handler(message: Message):
-
     await message.answer("Started updating yt-dlp...")
     await update_ytdlp()
     await message.answer("Updating finished!")
-
