@@ -79,6 +79,7 @@ async def dl_video_task(url: str, section):
     logger.info(f"Return code: {returncode}")
     return temp_name
 
+
 async def download_tiktok_fast(url: str, output_path: str) -> bool:
     """Download TikTok video via tikwm API. Returns True on success."""
     try:
@@ -98,7 +99,9 @@ async def download_tiktok_fast(url: str, output_path: str) -> bool:
             if not video_url:
                 return False
 
-            async with session.get(video_url, timeout=aiohttp.ClientTimeout(total=60)) as resp:
+            async with session.get(
+                video_url, timeout=aiohttp.ClientTimeout(total=60)
+            ) as resp:
                 if resp.status != 200:
                     return False
                 async with aiofiles.open(output_path, "wb") as f:
@@ -110,12 +113,41 @@ async def download_tiktok_fast(url: str, output_path: str) -> bool:
         logger.warning(f"tikwm fast download failed: {e}")
         return False
 
-async def extract_tiktok_audio(video_path: str, audio_path: str, audio_format: str) -> bool:
+
+async def get_tiktok_direct_url(url: str) -> str | None:
+    """Get direct video URL from tikwm without downloading."""
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                "https://tikwm.com/api/",
+                data={"url": url, "hd": 1},
+                timeout=aiohttp.ClientTimeout(total=15),
+            ) as r:
+                data = await r.json()
+
+        if data.get("code") != 0 or not data.get("data"):
+            return None
+
+        # tikwm returns absolute URLs on its own CDN
+        return data["data"].get("hdplay") or data["data"].get("play")
+    except Exception as e:
+        logger.warning(f"tikwm URL fetch failed: {e}")
+        return None
+
+
+async def extract_tiktok_audio(
+    video_path: str, audio_path: str, audio_format: str
+) -> bool:
     """Extract audio from downloaded mp4 using ffmpeg."""
     try:
         task = await subprocess.create_subprocess_exec(
-            "ffmpeg", "-y", "-i", video_path,
-            "-vn", "-acodec", "libmp3lame" if audio_format == "mp3" else "copy",
+            "ffmpeg",
+            "-y",
+            "-i",
+            video_path,
+            "-vn",
+            "-acodec",
+            "libmp3lame" if audio_format == "mp3" else "copy",
             audio_path,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -126,12 +158,35 @@ async def extract_tiktok_audio(video_path: str, audio_path: str, audio_format: s
         logger.warning(f"ffmpeg audio extract failed: {e}")
         return False
 
+
 async def download_video(
     url: str,
     unique_file_id: str | int,
     inline_msg_id,
     file_format: str | None = None,
 ):
+    is_audio = file_format is not None and file_format.lower() in AUDIO_FORMATS
+
+    # --- FASTEST PATH: send TikTok URL directly to Telegram (video only) ---
+    if "tiktok.com" in url.lower() and not is_audio:
+        direct_url = await get_tiktok_direct_url(url)
+        if direct_url:
+            try:
+                logger.info(f"Sending direct URL to Telegram: {direct_url}")
+                msg = await bot.send_video(
+                    chat_id=-4601538575,
+                    video=direct_url,  # <-- URL string, not FSInputFile
+                )
+                await bot.edit_message_media(
+                    media=InputMediaVideo(media=msg.video.file_id),
+                    inline_message_id=inline_msg_id,
+                )
+                return  # done, no cleanup needed
+            except Exception as e:
+                logger.warning(f"Direct URL send failed, falling back: {e}")
+                # fall through to yt-dlp
+
+    # --- FALLBACK: existing yt-dlp path ---
     YT_DLP_PATH = await os.path.abspath("yt-dlp")
     YT_DLP_COOKIES = await os.path.abspath("yt-dlp-cookies.txt")
 
@@ -160,14 +215,23 @@ async def download_video(
         output_template = f"{unique_file_id}.%(ext)s"
         cmd = [
             YT_DLP_PATH,
-            "-o", output_template,
+            "-o",
+            output_template,
             "--force-overwrite",
             "--no-playlist",
-            "--cookies", YT_DLP_COOKIES,
+            "--cookies",
+            YT_DLP_COOKIES,
         ]
 
         if is_audio:
-            cmd += ["-f", "bestaudio", "-x", "--audio-format", file_format, "--add-metadata"]
+            cmd += [
+                "-f",
+                "bestaudio",
+                "-x",
+                "--audio-format",
+                file_format,
+                "--add-metadata",
+            ]
         else:
             cmd += ["-f", "b[filesize<49M]/best", "--remux-video", "mp4"]
 
@@ -246,6 +310,7 @@ async def inline_tiktok_downloader(inline_query: InlineQuery):
     ]
 
     await inline_query.answer(results, cache_time=0, is_personal=True)
+
 
 @router.inline_query(F.query.contains("https"))
 async def inline_downloader(inline_query: InlineQuery):
